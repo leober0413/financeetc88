@@ -8,93 +8,25 @@ st.set_page_config(page_title="ETC 88 · Panel de Finanzas", layout="wide")
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=EB+Garamond:wght@400;700&display=swap');
+/* Solo lo que config.toml no controla */
 
-:root {
-  --bg:         #EAE0C4;
-  --surface:    #F2EAD3;
-  --dim:        #DDD3B2;
-  --navy:       #111328;
-  --navy2:      #1A1C38;
-  --text:       #1A1C38;
-  --text2:      #5C5F7A;
-  --accent:     #C49020;
-  --accent-bg:  #F5DFA0;
-  --accent-lt:  #F0C84A;
-  --border:     #C8BDA0;
-  --pos-bg:     #DCEFE2;
-  --pos-tx:     #1E4A36;
-  --neg-bg:     #FBE9E4;
-  --neg-tx:     #A34430;
-}
-
-/* Base */
-.main, [data-testid="stAppViewContainer"] { background: var(--bg) !important; }
-.block-container { padding-top: 1.5rem !important; padding-bottom: 3rem !important; }
-[data-testid="stHeader"] { background: var(--navy) !important; }
-
-/* KPI cards */
+/* KPI: borde y valor en serif */
 [data-testid="stMetric"] {
-  background: var(--surface) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 10px !important;
-  padding: 1rem !important;
-}
-[data-testid="stMetricLabel"] p {
-  font-size: 0.65rem !important; font-weight: 600 !important;
-  text-transform: uppercase !important; letter-spacing: 0.1em !important;
-  color: var(--accent) !important;
+  border: 1px solid #C8BDA0;
+  border-radius: 10px;
+  padding: 1rem;
 }
 [data-testid="stMetricValue"] > div {
   font-family: 'EB Garamond', Georgia, serif !important;
-  font-size: 1.8rem !important; color: var(--navy) !important;
+  font-size: 1.8rem !important;
 }
 
-/* Tabs */
-[data-baseweb="tab-list"] { background: transparent !important; border-bottom: 2px solid var(--border) !important; }
-[data-baseweb="tab"] { background: transparent !important; color: var(--text2) !important; font-size: 0.875rem !important; font-weight: 500 !important; margin-bottom: -2px !important; }
-[data-baseweb="tab"][aria-selected="true"] { color: var(--accent) !important; border-bottom: 2px solid var(--accent) !important; font-weight: 600 !important; }
-
-/* Dropdowns */
-[data-testid="stSelectbox"] > div > div { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; }
-[data-testid="stSelectbox"] label { font-size: 0.75rem !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: 0.08em !important; color: var(--text2) !important; }
-
-/* Buttons */
-.stButton > button {
-  background: var(--accent-bg) !important; color: var(--navy2) !important;
-  border: 1px solid var(--border) !important; border-radius: 8px !important;
-  font-size: 0.75rem !important; font-weight: 600 !important;
-  text-transform: uppercase !important; letter-spacing: 0.08em !important;
-  transition: all 0.15s ease !important;
+/* Tabla: borde */
+[data-testid="stDataFrame"] {
+  border: 1px solid #C8BDA0;
+  border-radius: 10px;
+  overflow: hidden;
 }
-.stButton > button:hover { background: var(--accent-lt) !important; border-color: var(--accent) !important; }
-.stFormSubmitButton > button { background: var(--navy) !important; color: var(--accent-lt) !important; border-color: var(--navy) !important; }
-.stFormSubmitButton > button:hover { background: var(--navy2) !important; }
-
-/* Tables */
-[data-testid="stDataFrame"] { border: 1px solid var(--border) !important; border-radius: 10px !important; overflow: hidden !important; }
-
-/* Expanders */
-[data-testid="stExpander"] { border: 1px solid var(--border) !important; border-radius: 8px !important; background: var(--surface) !important; }
-
-/* Inputs */
-[data-testid="stTextInput"] input,
-[data-testid="stNumberInput"] input,
-[data-testid="stDateInput"] input {
-  background: var(--surface) !important; border: 1px solid var(--border) !important;
-  border-radius: 8px !important; color: var(--text) !important;
-}
-[data-testid="stTextInput"] input:focus,
-[data-testid="stNumberInput"] input:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 2px rgba(196,144,32,0.2) !important; }
-[data-testid="stTextInput"] label,
-[data-testid="stNumberInput"] label,
-[data-testid="stDateInput"] label { font-size: 0.75rem !important; font-weight: 600 !important; text-transform: uppercase !important; letter-spacing: 0.08em !important; color: var(--text2) !important; }
-
-/* Alerts */
-[data-testid="stAlert"] { border-radius: 8px !important; border-left: 4px solid var(--accent) !important; }
-
-/* Divider */
-hr { border-color: var(--border) !important; opacity: 0.5 !important; }
 
 /* Mobile ≤768px */
 @media (max-width: 768px) {
@@ -102,7 +34,6 @@ hr { border-color: var(--border) !important; opacity: 0.5 !important; }
   [data-testid="stHorizontalBlock"] { flex-wrap: wrap !important; gap: 0.5rem !important; }
   [data-testid="stHorizontalBlock"] > [data-testid="column"] { min-width: calc(45% - 0.25rem) !important; flex: 1 1 calc(45% - 0.25rem) !important; }
   [data-testid="stMetricValue"] > div { font-size: 1.2rem !important; }
-  [data-testid="stMetricLabel"] p { font-size: 0.6rem !important; }
   [data-testid="stDataFrame"] > div { overflow-x: auto !important; }
   .stButton > button { width: 100% !important; }
 }
