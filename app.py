@@ -7,49 +7,291 @@ from datetime import date
 st.set_page_config(page_title="ETC 88 · Panel de Finanzas", layout="wide")
 
 st.markdown("""
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=EB+Garamond:wght@400;700&display=swap" rel="stylesheet"/>
 <style>
-@media (max-width: 768px) {
-    /* Reduce page padding */
-    .main .block-container {
-        padding: 1rem 0.75rem 3rem !important;
-    }
-    /* Wrap all column rows */
-    [data-testid="stHorizontalBlock"] {
-        flex-wrap: wrap !important;
-        gap: 0.5rem !important;
-    }
-    /* Each column: at least 45% wide → KPIs 2 per row */
-    [data-testid="stHorizontalBlock"] > [data-testid="column"] {
-        min-width: calc(45% - 0.25rem) !important;
-        flex: 1 1 calc(45% - 0.25rem) !important;
-    }
-    /* Shrink metric values to fit */
-    [data-testid="stMetricValue"] > div {
-        font-size: 1.2rem !important;
-    }
-    [data-testid="stMetricLabel"] p {
-        font-size: 0.7rem !important;
-    }
-    /* Tables scroll horizontally */
-    [data-testid="stDataFrame"] > div {
-        overflow-x: auto !important;
-    }
-    /* Full-width buttons on mobile */
-    .stButton > button {
-        width: 100% !important;
-    }
-    /* Tabs text smaller */
-    [data-testid="stTabs"] button {
-        font-size: 0.85rem !important;
-        padding: 0.5rem 0.75rem !important;
-    }
+/* ═══════════════════════════════════════════════════
+   ETC 88 DESIGN SYSTEM
+   Light: parchment + deep navy + golden amber
+   Dark:  deep navy + warm cream + golden amber
+   ═══════════════════════════════════════════════════ */
+
+/* ── Tokens ── */
+:root {
+  --bg:           #EAE0C4;
+  --surface:      #F2EAD3;
+  --surface-dim:  #DDD3B2;
+  --navy:         #111328;
+  --navy-mid:     #1A1C38;
+  --text:         #1A1C38;
+  --text-sec:     #3C3F5E;
+  --text-muted:   #6B6E8A;
+  --accent:       #C49020;
+  --accent-lt:    #F0C84A;
+  --accent-bg:    #F5DFA0;
+  --border:       #C8BDA0;
+  --positive-bg:  #DCEFE2;
+  --positive-tx:  #1E4A36;
+  --negative-bg:  #FBE9E4;
+  --negative-tx:  #A34430;
 }
+
+/* ── Fonts ── */
+html, body, [class*="css"], .stMarkdown, p, label, span, div {
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+h1, h2, h3,
+[data-testid="stMetricValue"] > div,
+[data-testid="stMetricValue"] label {
+  font-family: 'EB Garamond', Georgia, serif !important;
+}
+
+/* ── Background ── */
+[data-testid="stAppViewContainer"],
+[data-testid="stAppViewBlockContainer"],
+.main {
+  background-color: var(--bg) !important;
+}
+[data-testid="stHeader"] {
+  background-color: var(--navy) !important;
+}
+section[data-testid="stSidebar"] {
+  background-color: var(--navy-mid) !important;
+}
+.block-container {
+  padding-top: 2rem !important;
+  padding-bottom: 3rem !important;
+  max-width: 1400px;
+}
+
+/* ── Title ── */
+h1 {
+  color: var(--navy) !important;
+  font-size: 2rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+}
+h2, h3 {
+  color: var(--navy) !important;
+  font-weight: 600 !important;
+}
+
+/* ── KPI metric cards ── */
+[data-testid="stMetric"] {
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  padding: 1.25rem !important;
+  text-align: center !important;
+  transition: transform 0.2s ease !important;
+}
+[data-testid="stMetric"]:hover {
+  transform: translateY(-2px) !important;
+}
+[data-testid="stMetricLabel"] p {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.65rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.12em !important;
+  color: var(--accent) !important;
+}
+[data-testid="stMetricValue"] > div {
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
+  color: var(--navy) !important;
+  line-height: 1.2 !important;
+}
+[data-testid="stMetricDelta"] {
+  font-size: 0.75rem !important;
+}
+
+/* ── Divider ── */
+hr {
+  border-color: var(--border) !important;
+  opacity: 0.6 !important;
+}
+
+/* ── Tabs ── */
+[data-testid="stTabs"] [data-baseweb="tab-list"] {
+  background-color: transparent !important;
+  border-bottom: 2px solid var(--border) !important;
+  gap: 0 !important;
+}
+[data-testid="stTabs"] [data-baseweb="tab"] {
+  background-color: transparent !important;
+  color: var(--text-muted) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  padding: 0.75rem 1.25rem !important;
+  border-bottom: 2px solid transparent !important;
+  margin-bottom: -2px !important;
+}
+[data-testid="stTabs"] [aria-selected="true"] {
+  color: var(--accent) !important;
+  border-bottom: 2px solid var(--accent) !important;
+  font-weight: 600 !important;
+}
+
+/* ── Selectbox / dropdowns ── */
+[data-testid="stSelectbox"] > div > div {
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  color: var(--text) !important;
+}
+[data-testid="stSelectbox"] label {
+  color: var(--text-sec) !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* ── Buttons ── */
+.stButton > button {
+  background-color: var(--accent-bg) !important;
+  color: var(--navy-mid) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  padding: 0.5rem 1.25rem !important;
+  transition: all 0.2s ease !important;
+}
+.stButton > button:hover {
+  background-color: var(--accent-lt) !important;
+  border-color: var(--accent) !important;
+}
+.stButton > button[kind="primary"],
+.stFormSubmitButton > button {
+  background-color: var(--navy) !important;
+  color: var(--accent-lt) !important;
+  border-color: var(--navy) !important;
+}
+.stButton > button[kind="primary"]:hover,
+.stFormSubmitButton > button:hover {
+  background-color: var(--navy-mid) !important;
+}
+
+/* ── Tables / DataFrames ── */
+[data-testid="stDataFrame"] {
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+[data-testid="stDataFrame"] thead th {
+  background-color: var(--surface-dim) !important;
+  color: var(--text-sec) !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.65rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.12em !important;
+  padding: 0.75rem 1rem !important;
+}
+[data-testid="stDataFrame"] tbody tr:hover td {
+  background-color: var(--surface) !important;
+}
+
+/* ── Expanders ── */
+[data-testid="stExpander"] {
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  background-color: var(--surface) !important;
+}
+[data-testid="stExpander"] summary {
+  color: var(--text-sec) !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+}
+
+/* ── Form inputs ── */
+[data-testid="stTextInput"] input,
+[data-testid="stNumberInput"] input,
+[data-testid="stDateInput"] input {
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  color: var(--text) !important;
+  font-family: 'Inter', sans-serif !important;
+}
+[data-testid="stTextInput"] input:focus,
+[data-testid="stNumberInput"] input:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(196, 144, 32, 0.2) !important;
+}
+[data-testid="stTextInput"] label,
+[data-testid="stNumberInput"] label,
+[data-testid="stDateInput"] label {
+  color: var(--text-sec) !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+}
+
+/* ── Alerts / banners ── */
+[data-testid="stAlert"] {
+  border-radius: 8px !important;
+  border-left: 4px solid var(--accent) !important;
+}
+.stSuccess {
+  background-color: var(--positive-bg) !important;
+  color: var(--positive-tx) !important;
+}
+.stError {
+  background-color: var(--negative-bg) !important;
+  color: var(--negative-tx) !important;
+}
+
+/* ── Caption / caption text ── */
+[data-testid="stCaptionContainer"] p,
+.stCaption {
+  color: var(--text-muted) !important;
+  font-style: italic !important;
+}
+
+/* ══ MOBILE ≤768px ══ */
+@media (max-width: 768px) {
+  .block-container {
+    padding: 1rem 0.75rem 3rem !important;
+  }
+  [data-testid="stHorizontalBlock"] {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+  [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+    min-width: calc(45% - 0.25rem) !important;
+    flex: 1 1 calc(45% - 0.25rem) !important;
+  }
+  [data-testid="stMetricValue"] > div {
+    font-size: 1.2rem !important;
+  }
+  [data-testid="stMetricLabel"] p {
+    font-size: 0.6rem !important;
+  }
+  [data-testid="stDataFrame"] > div {
+    overflow-x: auto !important;
+  }
+  .stButton > button {
+    width: 100% !important;
+  }
+  [data-testid="stTabs"] [data-baseweb="tab"] {
+    font-size: 0.8rem !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+}
+
+/* ══ VERY SMALL ≤420px ══ */
 @media (max-width: 420px) {
-    /* Very small phones: stack everything */
-    [data-testid="stHorizontalBlock"] > [data-testid="column"] {
-        min-width: 100% !important;
-        flex: 1 1 100% !important;
-    }
+  [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+    min-width: 100% !important;
+    flex: 1 1 100% !important;
+  }
 }
 </style>
 """, unsafe_allow_html=True)
