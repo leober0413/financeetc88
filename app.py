@@ -1,15 +1,20 @@
 import streamlit as st
 import pandas as pd
 import gspread
+import plotly.graph_objects as go
 from google.oauth2.service_account import Credentials
 from datetime import date
 
 st.set_page_config(page_title="ETC 88 · Panel de Finanzas", layout="wide")
 
+if "dark" not in st.session_state:
+    st.session_state.dark = False
+
+dark = st.session_state.dark
+
 st.markdown("""
 <style>
 @media (max-width: 768px) {
-  .block-container { padding: 1rem 0.75rem 3rem !important; }
   [data-testid="stHorizontalBlock"] { flex-wrap: wrap !important; gap: 0.5rem !important; }
   [data-testid="stHorizontalBlock"] > [data-testid="column"] { min-width: calc(45% - 0.25rem) !important; flex: 1 1 calc(45% - 0.25rem) !important; }
   [data-testid="stMetricValue"] > div { font-size: 1.2rem !important; }
@@ -165,7 +170,7 @@ else:
 # ------------------------------------------------------------------
 # Encabezado
 # ------------------------------------------------------------------
-col_title, col_refresh = st.columns([5, 1])
+col_title, col_refresh, col_dark = st.columns([5, 1, 1])
 col_title.title("Panel de Finanzas — Equipo ETC 88")
 col_title.caption(
     "Vista interna. Datos en vivo desde Google Sheets." if not demo_mode
@@ -173,6 +178,9 @@ col_title.caption(
 )
 if not demo_mode and col_refresh.button("🔄 Refrescar", use_container_width=True):
     load_data.clear()
+    st.rerun()
+if col_dark.button("☀️" if dark else "🌙", use_container_width=True):
+    st.session_state.dark = not dark
     st.rerun()
 
 # ------------------------------------------------------------------
@@ -304,7 +312,20 @@ with tab_dashboard:
     )
     resumen_rol["Esperado"]    = resumen_rol["Miembros"] * CUOTA_ESPERADA
     resumen_rol["% Recaudado"] = (resumen_rol["Recaudado"] / resumen_rol["Esperado"] * 100).round(1)
-    st.bar_chart(resumen_rol.set_index("Rol")[["Esperado", "Recaudado"]])
+    fig = go.Figure(data=[
+        go.Bar(name="Esperado",   x=resumen_rol["Rol"], y=resumen_rol["Esperado"],   marker_color="#CBD5E0"),
+        go.Bar(name="Recaudado",  x=resumen_rol["Rol"], y=resumen_rol["Recaudado"],  marker_color="#48BB78"),
+    ])
+    fig.update_layout(
+        barmode="group",
+        template="plotly_dark" if dark else "plotly_white",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        margin=dict(l=0, r=0, t=30, b=0),
+        yaxis_title="RD$",
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
 # ══════════════════════════════════════════════════════════════════
 # TAB: REGISTRAR
