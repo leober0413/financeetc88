@@ -6,10 +6,7 @@ from utils import (
     append_pago, append_gasto,
 )
 
-st.set_page_config(page_title="ETC 88 · Registrar", layout="wide")
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
-if st.button("📊 Ir al Dashboard"):
-    st.switch_page("app.py")
 
 # ------------------------------------------------------------------
 # Carga de datos
@@ -57,13 +54,13 @@ st.divider()
 # ------------------------------------------------------------------
 st.subheader("Registrar gasto")
 with st.form("form_gasto", clear_on_submit=True):
-    fecha_val   = st.date_input("Fecha", value=date.today(),      disabled=demo_mode)
-    concepto_g  = st.text_input("Concepto",                       disabled=demo_mode)
+    fecha_val   = st.date_input("Fecha", value=date.today(),       disabled=demo_mode)
+    concepto_g  = st.text_input("Concepto",                        disabled=demo_mode)
     monto_g     = st.number_input("Monto (RD$)", min_value=0, step=100, value=0,
-                                  key="monto_gasto",              disabled=demo_mode)
+                                  key="monto_gasto",               disabled=demo_mode)
     fuente_g    = st.text_input("Fuente", value="Reporte Salidas", disabled=demo_mode)
     submitted_g = st.form_submit_button("Guardar gasto", type="primary",
-                                        use_container_width=True, disabled=demo_mode)
+                                        use_container_width=True,  disabled=demo_mode)
 
 if submitted_g and not demo_mode:
     if not concepto_g.strip():
