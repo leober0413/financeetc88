@@ -6,6 +6,54 @@ from datetime import date
 
 st.set_page_config(page_title="ETC 88 · Panel de Finanzas", layout="wide")
 
+st.markdown("""
+<style>
+@media (max-width: 768px) {
+    /* Reduce page padding */
+    .main .block-container {
+        padding: 1rem 0.75rem 3rem !important;
+    }
+    /* Wrap all column rows */
+    [data-testid="stHorizontalBlock"] {
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
+    /* Each column: at least 45% wide → KPIs 2 per row */
+    [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+        min-width: calc(45% - 0.25rem) !important;
+        flex: 1 1 calc(45% - 0.25rem) !important;
+    }
+    /* Shrink metric values to fit */
+    [data-testid="stMetricValue"] > div {
+        font-size: 1.2rem !important;
+    }
+    [data-testid="stMetricLabel"] p {
+        font-size: 0.7rem !important;
+    }
+    /* Tables scroll horizontally */
+    [data-testid="stDataFrame"] > div {
+        overflow-x: auto !important;
+    }
+    /* Full-width buttons on mobile */
+    .stButton > button {
+        width: 100% !important;
+    }
+    /* Tabs text smaller */
+    [data-testid="stTabs"] button {
+        font-size: 0.85rem !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+}
+@media (max-width: 420px) {
+    /* Very small phones: stack everything */
+    [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+        min-width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ------------------------------------------------------------------
 # Constantes
 # ------------------------------------------------------------------
