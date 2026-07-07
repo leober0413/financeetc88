@@ -8,27 +8,6 @@ st.set_page_config(page_title="ETC 88 · Panel de Finanzas", layout="wide")
 
 st.markdown("""
 <style>
-/* Solo lo que config.toml no controla */
-
-/* KPI: borde y valor en serif */
-[data-testid="stMetric"] {
-  border: 1px solid #C8BDA0;
-  border-radius: 10px;
-  padding: 1rem;
-}
-[data-testid="stMetricValue"] > div {
-  font-family: 'EB Garamond', Georgia, serif !important;
-  font-size: 1.8rem !important;
-}
-
-/* Tabla: borde */
-[data-testid="stDataFrame"] {
-  border: 1px solid #C8BDA0;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-/* Mobile ≤768px */
 @media (max-width: 768px) {
   .block-container { padding: 1rem 0.75rem 3rem !important; }
   [data-testid="stHorizontalBlock"] { flex-wrap: wrap !important; gap: 0.5rem !important; }
@@ -37,8 +16,6 @@ st.markdown("""
   [data-testid="stDataFrame"] > div { overflow-x: auto !important; }
   .stButton > button { width: 100% !important; }
 }
-
-/* Mobile ≤420px */
 @media (max-width: 420px) {
   [data-testid="stHorizontalBlock"] > [data-testid="column"] { min-width: 100% !important; flex: 1 1 100% !important; }
 }
