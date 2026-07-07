@@ -6,6 +6,7 @@ from utils import (
 
 st.set_page_config(page_title="ETC 88 · Dashboard", layout="wide")
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
+st.page_link("pages/1_Registrar.py", label="➕ Registrar pago / gasto", icon=None)
 
 # ------------------------------------------------------------------
 # Carga de datos

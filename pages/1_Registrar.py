@@ -8,6 +8,7 @@ from utils import (
 
 st.set_page_config(page_title="ETC 88 · Registrar", layout="wide")
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
+st.page_link("app.py", label="📊 Ir al Dashboard", icon=None)
 
 # ------------------------------------------------------------------
 # Carga de datos
