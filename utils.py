@@ -92,6 +92,34 @@ def load_demo_data():
     return miembros, pagos, gastos, donaciones
 
 
+@st.cache_data(ttl=60)
+def load_participantes():
+    sh = get_sheet()
+    participantes = _ws_to_df(sh.worksheet("Participantes"))
+    pagos_part    = _ws_to_df(sh.worksheet("Pagos Participantes"))
+
+    if not participantes.empty and "Nombre" in participantes.columns:
+        participantes = participantes[participantes["Nombre"].astype(str).str.strip() != ""]
+    if not pagos_part.empty and "Participante" in pagos_part.columns:
+        pagos_part = pagos_part[pagos_part["Participante"].astype(str).str.strip() != ""]
+
+    if "Activo" in pagos_part.columns:
+        pagos_part = pagos_part[pagos_part["Activo"].astype(str).str.upper() != "FALSE"]
+
+    if "Total Aportado" in participantes.columns:
+        participantes["Total Aportado"] = pd.to_numeric(participantes["Total Aportado"], errors="coerce").fillna(0)
+    if "Monto" in pagos_part.columns:
+        pagos_part["Monto"] = pd.to_numeric(pagos_part["Monto"], errors="coerce").fillna(0)
+
+    return participantes, pagos_part
+
+
+def load_demo_participantes():
+    participantes = pd.DataFrame(columns=["Nombre", "Telefono", "Total Aportado", "Status"])
+    pagos_part    = pd.DataFrame(columns=["Participante", "Concepto", "Monto", "Fecha", "Nota"])
+    return participantes, pagos_part
+
+
 def _col_idx(ws, col_name):
     headers = ws.row_values(1)
     return headers.index(col_name) + 1 if col_name in headers else None
