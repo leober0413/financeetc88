@@ -212,61 +212,33 @@ def soft_delete(worksheet_name, row_num):
 
 MOBILE_CSS = """
 <style>
-/* ── Sidebar base ── */
-[data-testid="stSidebar"] {
+/* ── Sidebar ── */
+[data-testid="stSidebar"],
+[data-testid="stSidebar"] > div {
     background: #0F172A !important;
+}
+[data-testid="stSidebar"] {
     border-right: 1px solid #1E293B !important;
 }
-
-/* Logo / título del sidebar */
-[data-testid="stSidebarHeader"] {
-    background: #0F172A !important;
-    padding-bottom: 0 !important;
-}
-
-/* Contenedor nav */
-[data-testid="stSidebarNav"] {
-    padding-top: 0.5rem;
-}
-
-/* Cada ítem de navegación */
-[data-testid="stSidebarNav"] a {
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-    padding: 10px 16px !important;
-    margin: 2px 10px !important;
-    border-radius: 8px !important;
-    color: #94A3B8 !important;
-    font-size: 0.875rem !important;
-    font-weight: 500 !important;
-    text-decoration: none !important;
-    transition: background 0.15s, color 0.15s !important;
-}
-
-[data-testid="stSidebarNav"] a:hover {
-    background: #1E293B !important;
-    color: #F1F5F9 !important;
-}
-
-/* Ítem activo */
-[data-testid="stSidebarNav"] a[aria-current="page"] {
+/* Nav links — activo */
+[data-testid="stSidebarNav"] a[aria-current="page"],
+[data-testid="stSidebarNavLink"][aria-current="page"] {
     background: #1E3A5F !important;
     color: #60A5FA !important;
     font-weight: 600 !important;
+    border-radius: 8px !important;
 }
-
-/* Separador superior del sidebar */
-[data-testid="stSidebar"]::before {
-    content: "ETC 88";
-    display: block;
-    color: #60A5FA;
-    font-size: 1.1rem;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    padding: 20px 20px 12px;
-    border-bottom: 1px solid #1E293B;
-    margin-bottom: 8px;
+/* Nav links — inactivos */
+[data-testid="stSidebarNav"] a,
+[data-testid="stSidebarNavLink"] {
+    color: #94A3B8 !important;
+    border-radius: 8px !important;
+    font-size: 0.875rem !important;
+}
+[data-testid="stSidebarNav"] a:hover,
+[data-testid="stSidebarNavLink"]:hover {
+    background: #1E293B !important;
+    color: #F1F5F9 !important;
 }
 
 /* ── Mobile ── */
