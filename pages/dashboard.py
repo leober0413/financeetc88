@@ -148,18 +148,32 @@ st.divider()
 # ------------------------------------------------------------------
 st.subheader("Gastos registrados")
 
-gf1, gf2 = st.columns(2)
+gf1, gf2, gf3, gf4 = st.columns(4)
 conceptos_g_disp = ["Todos"] + sorted(gastos["Concepto"].dropna().unique().tolist()) if "Concepto" in gastos.columns else ["Todos"]
 fuentes_g_disp   = ["Todos"] + sorted(gastos["Fuente"].dropna().unique().tolist()) if "Fuente" in gastos.columns else ["Todos"]
 
 concepto_g_sel = gf1.selectbox("Concepto", conceptos_g_disp, key="gasto_concepto")
 fuente_g_sel   = gf2.selectbox("Fuente",   fuentes_g_disp,   key="gasto_fuente")
 
+import pandas as pd
+if "Fecha" in gastos.columns:
+    fechas_validas = pd.to_datetime(gastos["Fecha"], dayfirst=True, errors="coerce").dropna()
+    fecha_min = fechas_validas.min().date() if not fechas_validas.empty else None
+    fecha_max = fechas_validas.max().date() if not fechas_validas.empty else None
+else:
+    fecha_min = fecha_max = None
+
+fecha_desde = gf3.date_input("Desde", value=fecha_min, key="gasto_desde") if fecha_min else None
+fecha_hasta = gf4.date_input("Hasta", value=fecha_max, key="gasto_hasta") if fecha_max else None
+
 gastos_f = gastos.copy()
 if concepto_g_sel != "Todos":
     gastos_f = gastos_f[gastos_f["Concepto"] == concepto_g_sel]
 if fuente_g_sel   != "Todos":
     gastos_f = gastos_f[gastos_f["Fuente"]   == fuente_g_sel]
+if fecha_desde and fecha_hasta and "Fecha" in gastos_f.columns:
+    fechas_parsed = pd.to_datetime(gastos_f["Fecha"], dayfirst=True, errors="coerce")
+    gastos_f = gastos_f[(fechas_parsed.dt.date >= fecha_desde) & (fechas_parsed.dt.date <= fecha_hasta)]
 
 st.caption(f"{len(gastos_f)} de {len(gastos)} gastos")
 
@@ -200,7 +214,18 @@ resumen_rol = (
 )
 resumen_rol["Esperado"]    = resumen_rol["Miembros"] * CUOTA_ESPERADA
 resumen_rol["% Recaudado"] = (resumen_rol["Recaudado"] / resumen_rol["Esperado"] * 100).round(1)
-st.bar_chart(resumen_rol.set_index("Rol")[["Esperado", "Recaudado"]])
+import altair as alt
+chart_data = resumen_rol.melt(id_vars="Rol", value_vars=["Esperado", "Recaudado"], var_name="Tipo", value_name="Monto")
+st.altair_chart(
+    alt.Chart(chart_data).mark_bar().encode(
+        x=alt.X("Rol:N", title=None),
+        y=alt.Y("Monto:Q", title="RD$"),
+        color=alt.Color("Tipo:N", scale=alt.Scale(domain=["Esperado", "Recaudado"], range=["#E53E3E", "#38A169"])),
+        xOffset="Tipo:N",
+        tooltip=["Rol", "Tipo", alt.Tooltip("Monto:Q", format="$,.0f")],
+    ).properties(height=350),
+    use_container_width=True,
+)
 
 # ------------------------------------------------------------------
 # Instrucciones conexión (solo demo)
