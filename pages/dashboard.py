@@ -78,21 +78,42 @@ def kpi_card(label, value, sublabel="\u00a0", accent="#3B82F6"):
         <div style="color:#64748B;font-size:0.68rem;">{sublabel}</div>
     </div>"""
 
-c1,c2,c3,c4,c5,c6 = st.columns(6)
-c1.markdown(kpi_card("Total esperado",    f"${total_esperado:,.0f}",
-            f"{total_miembros} miembros × RD$2,000", accent="#6366F1"), unsafe_allow_html=True)
-c2.markdown(kpi_card("Cuotas recaudadas", f"${total_cuotas:,.0f}",
-            f"{pct_recaudado}% del total esperado",  accent="#10B981"), unsafe_allow_html=True)
-c3.markdown(kpi_card("Pendiente",         f"${pendiente:,.0f}",
-            "por cobrar en cuotas",
-            accent="#EF4444" if pendiente > 0 else "#10B981"), unsafe_allow_html=True)
-c4.markdown(kpi_card("Donaciones",        f"${total_donaciones:,.0f}",
-            "ingresos externos",             accent="#F59E0B"), unsafe_allow_html=True)
-c5.markdown(kpi_card("Entradas totales",  f"${entradas:,.0f}",
-            "cuotas + otros + donaciones",   accent="#06B6D4"), unsafe_allow_html=True)
-c6.markdown(kpi_card("Balance",           f"${balance:,.0f}",
-            "entradas − salidas",
-            accent="#10B981" if balance >= 0 else "#EF4444"), unsafe_allow_html=True)
+def kpi_grid(*cards):
+    inner = "".join(f'<div>{c}</div>' for c in cards)
+    return f"""
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+        {inner}
+    </div>
+    <style>
+    @media(max-width:640px){{
+        div[data-kpi-grid] > div,
+        .kpi-responsive-grid > div {{
+            grid-template-columns: repeat(2,1fr) !important;
+        }}
+    }}
+    </style>
+    """
+
+cards_html = "".join([
+    f'<div>{kpi_card("Total esperado",    f"${total_esperado:,.0f}", f"{total_miembros} miembros × RD$2,000", "#6366F1")}</div>',
+    f'<div>{kpi_card("Cuotas recaudadas", f"${total_cuotas:,.0f}",   f"{pct_recaudado}% del total esperado",  "#10B981")}</div>',
+    f'<div>{kpi_card("Pendiente",         f"${pendiente:,.0f}",       "por cobrar en cuotas",                  "#EF4444" if pendiente > 0 else "#10B981")}</div>',
+    f'<div>{kpi_card("Donaciones",        f"${total_donaciones:,.0f}","ingresos externos",                     "#F59E0B")}</div>',
+    f'<div>{kpi_card("Entradas totales",  f"${entradas:,.0f}",        "cuotas + otros + donaciones",           "#06B6D4")}</div>',
+    f'<div>{kpi_card("Balance",           f"${balance:,.0f}",         "entradas − salidas",                    "#10B981" if balance >= 0 else "#EF4444")}</div>',
+])
+st.markdown(f"""
+<div class="kpi-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+{cards_html}
+</div>
+<style>
+@media(max-width:640px){{
+  .kpi-grid {{ grid-template-columns: repeat(2,1fr) !important; gap:8px !important; }}
+  .kpi-grid > div > div {{ height:95px !important; padding:12px 14px !important; }}
+  .kpi-grid > div > div > div:nth-child(2) {{ font-size:1.15rem !important; }}
+}}
+</style>
+""", unsafe_allow_html=True)
 
 st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
 pct_bar_color = "#10B981" if pct_recaudado >= 80 else "#F59E0B" if pct_recaudado >= 50 else "#EF4444"

@@ -243,14 +243,58 @@ MOBILE_CSS = """
 
 /* ── Mobile ── */
 @media (max-width: 768px) {
-  [data-testid="stHorizontalBlock"] { flex-wrap: wrap !important; gap: 0.5rem !important; }
-  [data-testid="stHorizontalBlock"] > [data-testid="column"] { min-width: calc(45% - 0.25rem) !important; flex: 1 1 calc(45% - 0.25rem) !important; }
-  [data-testid="stMetricValue"] > div { font-size: 1.1rem !important; }
+  /* Columnas Streamlit: wrap en 2 */
+  [data-testid="stHorizontalBlock"] {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+  [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+    min-width: calc(48% - 0.25rem) !important;
+    flex: 1 1 calc(48% - 0.25rem) !important;
+  }
+  /* Tablas: scroll horizontal */
   [data-testid="stDataFrame"] > div { overflow-x: auto !important; }
-  .stButton > button { width: 100% !important; }
+  /* Botones full width */
+  .stButton > button {
+    width: 100% !important;
+    padding: 0.6rem 1rem !important;
+    font-size: 0.95rem !important;
+  }
+  /* Tabs: scroll horizontal si no caben */
+  [data-testid="stTabs"] [role="tablist"] {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  [data-testid="stTabs"] button[role="tab"] {
+    white-space: nowrap !important;
+    font-size: 0.8rem !important;
+    padding: 6px 10px !important;
+  }
+  /* Títulos más compactos */
+  h1 { font-size: 1.5rem !important; }
+  h2 { font-size: 1.2rem !important; }
+  h3 { font-size: 1rem !important; }
+  /* Selectbox táctil */
+  [data-testid="stSelectbox"] { touch-action: manipulation; }
+  /* Inputs más altos para dedos */
+  input, select, textarea {
+    font-size: 16px !important; /* evita zoom en iOS */
+    min-height: 44px !important;
+  }
 }
-@media (max-width: 420px) {
-  [data-testid="stHorizontalBlock"] > [data-testid="column"] { min-width: 100% !important; flex: 1 1 100% !important; }
+
+@media (max-width: 480px) {
+  /* En pantallas muy pequeñas: columnas full width */
+  [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+    min-width: 100% !important;
+    flex: 1 1 100% !important;
+  }
+  /* Excepto filtros de 2 columnas — mantener 50/50 */
+  [data-testid="stHorizontalBlock"]:has(> [data-testid="column"]:nth-child(2):last-child) > [data-testid="column"] {
+    min-width: calc(48% - 0.25rem) !important;
+    flex: 1 1 calc(48% - 0.25rem) !important;
+  }
 }
 </style>
 """
