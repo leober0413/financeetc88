@@ -96,9 +96,29 @@ st.divider()
 # Tabla pagos + eliminar
 # ------------------------------------------------------------------
 st.subheader("Pagos registrados")
-cols_pagos = [c for c in ["Miembro", "Concepto", "Monto", "Fuente", "Nota"] if c in pagos.columns]
+
+pf1, pf2, pf3 = st.columns(3)
+miembros_disp  = ["Todos"] + sorted(pagos["Miembro"].dropna().unique().tolist()) if "Miembro" in pagos.columns else ["Todos"]
+conceptos_disp = ["Todos"] + sorted(pagos["Concepto"].dropna().unique().tolist()) if "Concepto" in pagos.columns else ["Todos"]
+fuentes_disp   = ["Todos"] + sorted(pagos["Fuente"].dropna().unique().tolist()) if "Fuente" in pagos.columns else ["Todos"]
+
+miembro_sel  = pf1.selectbox("Miembro",  miembros_disp,  key="pago_miembro")
+concepto_sel = pf2.selectbox("Concepto", conceptos_disp, key="pago_concepto")
+fuente_sel   = pf3.selectbox("Fuente",   fuentes_disp,   key="pago_fuente")
+
+pagos_f = pagos.copy()
+if miembro_sel  != "Todos":
+    pagos_f = pagos_f[pagos_f["Miembro"]  == miembro_sel]
+if concepto_sel != "Todos":
+    pagos_f = pagos_f[pagos_f["Concepto"] == concepto_sel]
+if fuente_sel   != "Todos":
+    pagos_f = pagos_f[pagos_f["Fuente"]   == fuente_sel]
+
+st.caption(f"{len(pagos_f)} de {len(pagos)} pagos")
+
+cols_pagos = [c for c in ["Miembro", "Concepto", "Monto", "Fuente", "Nota"] if c in pagos_f.columns]
 st.dataframe(
-    pagos[cols_pagos].style.format({"Monto": "${:,.0f}"}),
+    pagos_f[cols_pagos].style.format({"Monto": "${:,.0f}"}),
     use_container_width=True,
     hide_index=True,
 )
@@ -127,9 +147,25 @@ st.divider()
 # Tabla gastos + eliminar
 # ------------------------------------------------------------------
 st.subheader("Gastos registrados")
-cols_gastos = [c for c in ["Fecha", "Concepto", "Monto", "Fuente"] if c in gastos.columns]
+
+gf1, gf2 = st.columns(2)
+conceptos_g_disp = ["Todos"] + sorted(gastos["Concepto"].dropna().unique().tolist()) if "Concepto" in gastos.columns else ["Todos"]
+fuentes_g_disp   = ["Todos"] + sorted(gastos["Fuente"].dropna().unique().tolist()) if "Fuente" in gastos.columns else ["Todos"]
+
+concepto_g_sel = gf1.selectbox("Concepto", conceptos_g_disp, key="gasto_concepto")
+fuente_g_sel   = gf2.selectbox("Fuente",   fuentes_g_disp,   key="gasto_fuente")
+
+gastos_f = gastos.copy()
+if concepto_g_sel != "Todos":
+    gastos_f = gastos_f[gastos_f["Concepto"] == concepto_g_sel]
+if fuente_g_sel   != "Todos":
+    gastos_f = gastos_f[gastos_f["Fuente"]   == fuente_g_sel]
+
+st.caption(f"{len(gastos_f)} de {len(gastos)} gastos")
+
+cols_gastos = [c for c in ["Fecha", "Concepto", "Monto", "Fuente"] if c in gastos_f.columns]
 st.dataframe(
-    gastos[cols_gastos].style.format({"Monto": "${:,.0f}"}),
+    gastos_f[cols_gastos].style.format({"Monto": "${:,.0f}"}),
     use_container_width=True,
     hide_index=True,
 )
