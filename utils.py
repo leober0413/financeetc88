@@ -10,6 +10,11 @@ CONCEPTOS_PAGO = [
     "Formacion 1", "Formacion 2", "Formacion 3", "Formacion 4",
 ]
 FUENTES_PAGO = ["Control de Cuotas", "Tardanzas", "Otro"]
+CONCEPTOS_PARTICIPANTE = [
+    "Pago de Participacion", "Inscripcion",
+    "Abono 1", "Abono 2", "Abono 3",
+    "Pago Completo", "Beca/Descuento",
+]
 
 
 @st.cache_resource
@@ -18,6 +23,17 @@ def get_sheet():
         st.secrets["gcp_service_account"], scopes=SCOPES
     )
     return gspread.authorize(creds).open_by_key(st.secrets["sheet_id"])
+
+
+_SHEETS_EPOCH = pd.Timestamp("1899-12-30")
+
+def _serial_to_date(val):
+    """Convert Google Sheets date serial (int) to DD/MM/YYYY string."""
+    try:
+        n = int(val)
+        return (_SHEETS_EPOCH + pd.Timedelta(days=n)).strftime("%d/%m/%Y")
+    except (ValueError, TypeError):
+        return val
 
 
 def _ws_to_df(ws):
@@ -30,6 +46,11 @@ def _ws_to_df(ws):
     rows = vals[1:]
     df = pd.DataFrame(rows, columns=headers)
     df["_row_num"] = range(2, len(rows) + 2)
+    # Convert date serials in Fecha column
+    if "Fecha" in df.columns:
+        df["Fecha"] = df["Fecha"].apply(
+            lambda v: _serial_to_date(v) if str(v).lstrip("-").isdigit() and v != "" else v
+        )
     return df
 
 
@@ -141,6 +162,42 @@ def append_gasto(fecha, concepto, monto, fuente):
                "Monto": monto, "Fuente": fuente, "Activo": "TRUE"}
     ws.append_row([mapping.get(h, "") for h in headers], value_input_option="USER_ENTERED")
     load_data.clear()
+
+
+def append_donacion(fecha, donante, monto, nota):
+    ws = get_sheet().worksheet("Donaciones")
+    headers = ws.row_values(1)
+    mapping = {"Fecha": str(fecha), "Donante": donante, "Monto": monto, "Nota": nota}
+    ws.append_row([mapping.get(h, "") for h in headers], value_input_option="USER_ENTERED")
+    load_data.clear()
+
+
+def append_participante(nombre, telefono):
+    ws = get_sheet().worksheet("Participantes")
+    # Find next empty row
+    col_a = ws.col_values(1)
+    next_row = len(col_a) + 1
+    r = next_row
+    ws.update(
+        values=[[
+            nombre,
+            telefono,
+            f"=IF(A{r}=\"\",\"\",SUMIF('Pagos Participantes'!$A$2:$A$500,A{r},'Pagos Participantes'!$C$2:$C$500))",
+            f"=IF(A{r}=\"\",\"\",IF(Resumen!$B$4=0,\"Definir cuota\",IF(C{r}>=Resumen!$B$4,\"PAGO COMPLETO\",\"PENDIENTE\")))",
+        ]],
+        range_name=f"A{r}:D{r}",
+        value_input_option="USER_ENTERED",
+    )
+    load_participantes.clear()
+
+
+def append_pago_participante(participante, concepto, monto, fecha, nota):
+    ws = get_sheet().worksheet("Pagos Participantes")
+    headers = ws.row_values(1)
+    mapping = {"Participante": participante, "Concepto": concepto,
+               "Monto": monto, "Fecha": str(fecha), "Nota": nota, "Activo": "TRUE"}
+    ws.append_row([mapping.get(h, "") for h in headers], value_input_option="USER_ENTERED")
+    load_participantes.clear()
 
 
 def soft_delete(worksheet_name, row_num):
