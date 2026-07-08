@@ -16,9 +16,9 @@ if demo_mode:
         "Mostrando datos de demostración — no hay credenciales configuradas (`st.secrets`).",
         icon="⚠️",
     )
-    miembros, pagos, gastos = load_demo_data()
+    miembros, pagos, gastos, donaciones = load_demo_data()
 else:
-    miembros, pagos, gastos = load_data()
+    miembros, pagos, gastos, donaciones = load_data()
 
 # ------------------------------------------------------------------
 # Encabezado
@@ -51,21 +51,23 @@ if status_sel != "Todos":
 # ------------------------------------------------------------------
 # KPIs
 # ------------------------------------------------------------------
-total_miembros  = len(miembros)
-total_esperado  = total_miembros * CUOTA_ESPERADA
-total_cuotas    = pagos.loc[pagos["Concepto"].astype(str).str.startswith("Cuota"), "Monto"].sum()
-pendiente       = total_esperado - total_cuotas
-total_tardanzas = pagos.loc[~pagos["Concepto"].astype(str).str.startswith("Cuota"), "Monto"].sum()
-entradas        = total_cuotas + total_tardanzas
-salidas         = gastos["Monto"].sum()
-balance         = entradas - salidas
+total_miembros   = len(miembros)
+total_esperado   = total_miembros * CUOTA_ESPERADA
+total_cuotas     = pagos.loc[pagos["Concepto"].astype(str).str.startswith("Cuota"), "Monto"].sum()
+pendiente        = total_esperado - total_cuotas
+total_tardanzas  = pagos.loc[~pagos["Concepto"].astype(str).str.startswith("Cuota"), "Monto"].sum()
+total_donaciones = donaciones["Monto"].sum() if not donaciones.empty and "Monto" in donaciones.columns else 0
+entradas         = total_cuotas + total_tardanzas + total_donaciones
+salidas          = gastos["Monto"].sum()
+balance          = entradas - salidas
 
-k1, k2, k3, k4, k5 = st.columns(5)
+k1, k2, k3, k4, k5, k6 = st.columns(6)
 k1.metric("Total esperado",    f"${total_esperado:,.0f}")
 k2.metric("Cuotas recaudadas", f"${total_cuotas:,.0f}")
 k3.metric("Pendiente",         f"${pendiente:,.0f}")
-k4.metric("Entradas totales",  f"${entradas:,.0f}")
-k5.metric("Balance",           f"${balance:,.0f}")
+k4.metric("Donaciones",        f"${total_donaciones:,.0f}")
+k5.metric("Entradas totales",  f"${entradas:,.0f}")
+k6.metric("Balance",           f"${balance:,.0f}")
 
 st.divider()
 
@@ -200,6 +202,22 @@ if not demo_mode and not gastos.empty and "_row_num" in gastos.columns:
                 st.rerun()
             else:
                 st.error(msg)
+
+st.divider()
+
+# ------------------------------------------------------------------
+# Tabla donaciones
+# ------------------------------------------------------------------
+st.subheader("Donaciones")
+if donaciones.empty:
+    st.info("No hay donaciones registradas.")
+else:
+    cols_don = [c for c in ["Fecha", "Donante", "Monto", "Nota"] if c in donaciones.columns]
+    st.dataframe(
+        donaciones[cols_don].style.format({"Monto": "${:,.0f}"}),
+        use_container_width=True,
+        hide_index=True,
+    )
 
 st.divider()
 

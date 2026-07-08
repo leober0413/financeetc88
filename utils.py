@@ -36,9 +36,10 @@ def _ws_to_df(ws):
 @st.cache_data(ttl=60)
 def load_data():
     sh = get_sheet()
-    miembros = _ws_to_df(sh.worksheet("Miembros"))
-    pagos    = _ws_to_df(sh.worksheet("Pagos"))
-    gastos   = _ws_to_df(sh.worksheet("Gastos"))
+    miembros   = _ws_to_df(sh.worksheet("Miembros"))
+    pagos      = _ws_to_df(sh.worksheet("Pagos"))
+    gastos     = _ws_to_df(sh.worksheet("Gastos"))
+    donaciones = _ws_to_df(sh.worksheet("Donaciones"))
 
     if not miembros.empty and "Nombre" in miembros.columns:
         miembros = miembros[miembros["Nombre"].astype(str).str.strip() != ""]
@@ -46,6 +47,8 @@ def load_data():
         pagos = pagos[pagos["Miembro"].astype(str).str.strip() != ""]
     if not gastos.empty and "Concepto" in gastos.columns:
         gastos = gastos[gastos["Concepto"].astype(str).str.strip() != ""]
+    if not donaciones.empty and "Donante" in donaciones.columns:
+        donaciones = donaciones[donaciones["Donante"].astype(str).str.strip() != ""]
 
     if "Activo" in pagos.columns:
         pagos = pagos[pagos["Activo"].astype(str).str.upper() != "FALSE"]
@@ -58,8 +61,10 @@ def load_data():
         pagos["Monto"] = pd.to_numeric(pagos["Monto"], errors="coerce").fillna(0)
     if "Monto" in gastos.columns:
         gastos["Monto"] = pd.to_numeric(gastos["Monto"], errors="coerce").fillna(0)
+    if "Monto" in donaciones.columns:
+        donaciones["Monto"] = pd.to_numeric(donaciones["Monto"], errors="coerce").fillna(0)
 
-    return miembros, pagos, gastos
+    return miembros, pagos, gastos, donaciones
 
 
 def load_demo_data():
@@ -81,7 +86,10 @@ def load_demo_data():
     gastos = pd.DataFrame([
         {"Fecha": "No especificada", "Concepto": "Merienda formacion 3", "Monto": 2500, "Fuente": "Reporte Salidas"},
     ])
-    return miembros, pagos, gastos
+    donaciones = pd.DataFrame([
+        {"Fecha": "No especificada", "Donante": "Cuenta de Dayrelins", "Monto": 5000, "Nota": "Merienda formacion 3"},
+    ])
+    return miembros, pagos, gastos, donaciones
 
 
 def _col_idx(ws, col_name):

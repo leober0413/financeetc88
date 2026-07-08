@@ -15,9 +15,9 @@ demo_mode = "gcp_service_account" not in st.secrets
 
 if demo_mode:
     st.info("Conecta Google Sheets para habilitar el registro de datos.", icon="ℹ️")
-    miembros, _, _ = load_demo_data()
+    miembros, _, _, _ = load_demo_data()
 else:
-    miembros, _, _ = load_data()
+    miembros, _, _, _ = load_data()
 
 st.title("Registrar")
 
