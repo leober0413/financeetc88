@@ -61,13 +61,53 @@ entradas         = total_cuotas + total_tardanzas + total_donaciones
 salidas          = gastos["Monto"].sum()
 balance          = entradas - salidas
 
-k1, k2, k3, k4, k5, k6 = st.columns(6)
-k1.metric("Total esperado",    f"${total_esperado:,.0f}")
-k2.metric("Cuotas recaudadas", f"${total_cuotas:,.0f}")
-k3.metric("Pendiente",         f"${pendiente:,.0f}")
-k4.metric("Donaciones",        f"${total_donaciones:,.0f}")
-k5.metric("Entradas totales",  f"${entradas:,.0f}")
-k6.metric("Balance",           f"${balance:,.0f}")
+pct_recaudado = int(total_cuotas / total_esperado * 100) if total_esperado > 0 else 0
+
+def kpi_card(label, value, sublabel="\u00a0", accent="#3B82F6"):
+    return f"""
+    <div style="background:#1E293B;border-radius:12px;padding:16px 18px;
+                border-left:5px solid {accent};height:110px;
+                display:flex;flex-direction:column;justify-content:space-between;">
+        <div style="color:#94A3B8;font-size:0.68rem;font-weight:700;
+                    letter-spacing:0.09em;text-transform:uppercase;">
+            {label}
+        </div>
+        <div style="color:#F1F5F9;font-size:1.45rem;font-weight:700;line-height:1.1;">
+            {value}
+        </div>
+        <div style="color:#64748B;font-size:0.68rem;">{sublabel}</div>
+    </div>"""
+
+c1,c2,c3,c4,c5,c6 = st.columns(6)
+c1.markdown(kpi_card("Total esperado",    f"${total_esperado:,.0f}",
+            f"{total_miembros} miembros × RD$2,000", accent="#6366F1"), unsafe_allow_html=True)
+c2.markdown(kpi_card("Cuotas recaudadas", f"${total_cuotas:,.0f}",
+            f"{pct_recaudado}% del total esperado",  accent="#10B981"), unsafe_allow_html=True)
+c3.markdown(kpi_card("Pendiente",         f"${pendiente:,.0f}",
+            "por cobrar en cuotas",
+            accent="#EF4444" if pendiente > 0 else "#10B981"), unsafe_allow_html=True)
+c4.markdown(kpi_card("Donaciones",        f"${total_donaciones:,.0f}",
+            "ingresos externos",             accent="#F59E0B"), unsafe_allow_html=True)
+c5.markdown(kpi_card("Entradas totales",  f"${entradas:,.0f}",
+            "cuotas + otros + donaciones",   accent="#06B6D4"), unsafe_allow_html=True)
+c6.markdown(kpi_card("Balance",           f"${balance:,.0f}",
+            "entradas − salidas",
+            accent="#10B981" if balance >= 0 else "#EF4444"), unsafe_allow_html=True)
+
+st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
+pct_bar_color = "#10B981" if pct_recaudado >= 80 else "#F59E0B" if pct_recaudado >= 50 else "#EF4444"
+st.markdown(f"""
+<div style="background:#1E293B;border-radius:8px;padding:10px 16px;margin-bottom:4px;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="color:#94A3B8;font-size:0.75rem;font-weight:600;">PROGRESO DE RECAUDO</span>
+        <span style="color:#F1F5F9;font-size:0.75rem;font-weight:700;">{pct_recaudado}%</span>
+    </div>
+    <div style="background:#334155;border-radius:4px;height:8px;">
+        <div style="background:{pct_bar_color};width:{min(pct_recaudado,100)}%;
+                    height:8px;border-radius:4px;transition:width 0.3s;"></div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 st.divider()
 
@@ -76,20 +116,26 @@ st.divider()
 # ------------------------------------------------------------------
 st.subheader(f"Miembros ({len(miembros_f)} de {total_miembros})")
 
-def resaltar_status(val):
-    if val == "PAGO COMPLETO":
-        return "background-color: #DCEFE2; color: #1E4A36; font-weight: 600;"
-    if val == "PENDIENTE":
-        return "background-color: #FBE9E4; color: #A34430; font-weight: 600;"
-    return ""
-
 cols_miembros = [c for c in ["Nombre", "Rol", "Total Aportado", "Status"] if c in miembros_f.columns]
+miembros_display = miembros_f[cols_miembros].copy()
+if "Status" in miembros_display.columns:
+    miembros_display["Status"] = miembros_display["Status"].map(
+        lambda v: "✅ Pago completo" if v == "PAGO COMPLETO" else ("⏳ Pendiente" if v == "PENDIENTE" else v)
+    )
+
 st.dataframe(
-    miembros_f[cols_miembros]
-    .style.map(resaltar_status, subset=["Status"])
-    .format({"Total Aportado": "${:,.0f}"}),
+    miembros_display,
     use_container_width=True,
     hide_index=True,
+    height=min(36 * len(miembros_display) + 38, 480),
+    column_config={
+        "Nombre":        st.column_config.TextColumn("Miembro",       width="large"),
+        "Rol":           st.column_config.TextColumn("Rol",           width="small"),
+        "Total Aportado": st.column_config.ProgressColumn(
+            "Aportado", format="$%.0f", min_value=0, max_value=CUOTA_ESPERADA, width="medium"
+        ),
+        "Status":        st.column_config.TextColumn("Estado",        width="medium"),
+    },
 )
 
 st.divider()
@@ -120,9 +166,17 @@ st.caption(f"{len(pagos_f)} de {len(pagos)} pagos")
 
 cols_pagos = [c for c in ["Miembro", "Concepto", "Monto", "Fuente", "Nota"] if c in pagos_f.columns]
 st.dataframe(
-    pagos_f[cols_pagos].style.format({"Monto": "${:,.0f}"}),
+    pagos_f[cols_pagos],
     use_container_width=True,
     hide_index=True,
+    height=min(36 * len(pagos_f) + 38, 400),
+    column_config={
+        "Miembro":  st.column_config.TextColumn("Miembro",   width="large"),
+        "Concepto": st.column_config.TextColumn("Concepto",  width="medium"),
+        "Monto":    st.column_config.NumberColumn("Monto",   format="$%.0f", width="small"),
+        "Fuente":   st.column_config.TextColumn("Fuente",    width="medium"),
+        "Nota":     st.column_config.TextColumn("Nota",      width="medium"),
+    },
 )
 
 if not demo_mode and not pagos.empty and "_row_num" in pagos.columns:
@@ -181,9 +235,16 @@ st.caption(f"{len(gastos_f)} de {len(gastos)} gastos")
 
 cols_gastos = [c for c in ["Fecha", "Concepto", "Monto", "Fuente"] if c in gastos_f.columns]
 st.dataframe(
-    gastos_f[cols_gastos].style.format({"Monto": "${:,.0f}"}),
+    gastos_f[cols_gastos],
     use_container_width=True,
     hide_index=True,
+    height=min(36 * len(gastos_f) + 38, 400),
+    column_config={
+        "Fecha":    st.column_config.TextColumn("Fecha",    width="small"),
+        "Concepto": st.column_config.TextColumn("Concepto", width="large"),
+        "Monto":    st.column_config.NumberColumn("Monto",  format="$%.0f", width="small"),
+        "Fuente":   st.column_config.TextColumn("Fuente",   width="medium"),
+    },
 )
 
 if not demo_mode and not gastos.empty and "_row_num" in gastos.columns:
@@ -214,9 +275,16 @@ if donaciones.empty:
 else:
     cols_don = [c for c in ["Fecha", "Donante", "Monto", "Nota"] if c in donaciones.columns]
     st.dataframe(
-        donaciones[cols_don].style.format({"Monto": "${:,.0f}"}),
+        donaciones[cols_don],
         use_container_width=True,
         hide_index=True,
+        height=min(36 * len(donaciones) + 38, 300),
+        column_config={
+            "Fecha":   st.column_config.TextColumn("Fecha",   width="small"),
+            "Donante": st.column_config.TextColumn("Donante", width="large"),
+            "Monto":   st.column_config.NumberColumn("Monto", format="$%.0f", width="small"),
+            "Nota":    st.column_config.TextColumn("Nota",    width="large"),
+        },
     )
 
 st.divider()

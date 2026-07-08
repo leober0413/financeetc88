@@ -52,20 +52,23 @@ st.subheader(f"Participantes ({total_part})")
 if participantes.empty:
     st.info("No hay participantes registrados aún.")
 else:
-    def resaltar_status(val):
-        if val == "PAGO COMPLETO":
-            return "background-color: #DCEFE2; color: #1E4A36; font-weight: 600;"
-        if val == "PENDIENTE":
-            return "background-color: #FBE9E4; color: #A34430; font-weight: 600;"
-        return ""
-
     cols_p = [c for c in ["Nombre", "Telefono", "Total Aportado", "Status"] if c in participantes.columns]
+    part_display = participantes[cols_p].copy()
+    if "Status" in part_display.columns:
+        part_display["Status"] = part_display["Status"].map(
+            lambda v: "✅ Pago completo" if v == "PAGO COMPLETO" else ("⏳ Pendiente" if v == "PENDIENTE" else v)
+        )
     st.dataframe(
-        participantes[cols_p]
-        .style.map(resaltar_status, subset=["Status"] if "Status" in participantes.columns else [])
-        .format({"Total Aportado": "${:,.0f}"}),
+        part_display,
         use_container_width=True,
         hide_index=True,
+        height=min(36 * len(part_display) + 38, 400),
+        column_config={
+            "Nombre":         st.column_config.TextColumn("Participante", width="large"),
+            "Telefono":       st.column_config.TextColumn("Teléfono",     width="medium"),
+            "Total Aportado": st.column_config.NumberColumn("Aportado",   format="$%.0f", width="small"),
+            "Status":         st.column_config.TextColumn("Estado",       width="medium"),
+        },
     )
 
 st.divider()
@@ -95,9 +98,17 @@ else:
 
     cols_pp = [c for c in ["Participante", "Concepto", "Monto", "Fecha", "Nota"] if c in pagos_f.columns]
     st.dataframe(
-        pagos_f[cols_pp].style.format({"Monto": "${:,.0f}"}),
+        pagos_f[cols_pp],
         use_container_width=True,
         hide_index=True,
+        height=min(36 * len(pagos_f) + 38, 400),
+        column_config={
+            "Participante": st.column_config.TextColumn("Participante", width="large"),
+            "Concepto":     st.column_config.TextColumn("Concepto",     width="medium"),
+            "Monto":        st.column_config.NumberColumn("Monto",      format="$%.0f", width="small"),
+            "Fecha":        st.column_config.TextColumn("Fecha",        width="small"),
+            "Nota":         st.column_config.TextColumn("Nota",         width="medium"),
+        },
     )
 
     if not demo_mode and "_row_num" in pagos_part.columns:
