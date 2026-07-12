@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
+from datetime import datetime
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 CUOTA_ESPERADA = 2000
@@ -124,6 +125,8 @@ def load_participantes():
     if not pagos_part.empty and "Participante" in pagos_part.columns:
         pagos_part = pagos_part[pagos_part["Participante"].astype(str).str.strip() != ""]
 
+    if "Activo" in participantes.columns:
+        participantes = participantes[participantes["Activo"].astype(str).str.upper() != "FALSE"]
     if "Activo" in pagos_part.columns:
         pagos_part = pagos_part[pagos_part["Activo"].astype(str).str.upper() != "FALSE"]
 
@@ -146,6 +149,18 @@ def _col_idx(ws, col_name):
     return headers.index(col_name) + 1 if col_name in headers else None
 
 
+def log_actividad(accion, detalle):
+    try:
+        usuario = st.session_state.get("username", "sistema")
+        ws = get_sheet().worksheet("Log")
+        ws.append_row(
+            [datetime.now().strftime("%Y-%m-%d %H:%M:%S"), usuario, accion, detalle],
+            value_input_option="USER_ENTERED",
+        )
+    except Exception:
+        pass
+
+
 def append_pago(miembro, concepto, monto, fuente, nota):
     ws = get_sheet().worksheet("Pagos")
     headers = ws.row_values(1)
@@ -153,6 +168,7 @@ def append_pago(miembro, concepto, monto, fuente, nota):
                "Fuente": fuente, "Nota": nota, "Activo": "TRUE"}
     ws.append_row([mapping.get(h, "") for h in headers], value_input_option="USER_ENTERED")
     load_data.clear()
+    log_actividad("Pago registrado", f"{miembro} — {concepto} — ${monto:,.0f}")
 
 
 def append_gasto(fecha, concepto, monto, fuente):
@@ -162,6 +178,7 @@ def append_gasto(fecha, concepto, monto, fuente):
                "Monto": monto, "Fuente": fuente, "Activo": "TRUE"}
     ws.append_row([mapping.get(h, "") for h in headers], value_input_option="USER_ENTERED")
     load_data.clear()
+    log_actividad("Gasto registrado", f"{concepto} — ${monto:,.0f} — {fuente}")
 
 
 def append_donacion(fecha, donante, monto, nota):
@@ -170,11 +187,11 @@ def append_donacion(fecha, donante, monto, nota):
     mapping = {"Fecha": str(fecha), "Donante": donante, "Monto": monto, "Nota": nota}
     ws.append_row([mapping.get(h, "") for h in headers], value_input_option="USER_ENTERED")
     load_data.clear()
+    log_actividad("Donación registrada", f"{donante} — ${monto:,.0f}")
 
 
 def append_participante(nombre, telefono):
     ws = get_sheet().worksheet("Participantes")
-    # Find next empty row
     col_a = ws.col_values(1)
     next_row = len(col_a) + 1
     r = next_row
@@ -189,6 +206,7 @@ def append_participante(nombre, telefono):
         value_input_option="USER_ENTERED",
     )
     load_participantes.clear()
+    log_actividad("Participante registrado", f"{nombre} — Tel: {telefono}")
 
 
 def append_pago_participante(participante, concepto, monto, fecha, nota):
@@ -198,6 +216,20 @@ def append_pago_participante(participante, concepto, monto, fecha, nota):
                "Monto": monto, "Fecha": str(fecha), "Nota": nota, "Activo": "TRUE"}
     ws.append_row([mapping.get(h, "") for h in headers], value_input_option="USER_ENTERED")
     load_participantes.clear()
+    log_actividad("Pago participante registrado", f"{participante} — {concepto} — ${monto:,.0f}")
+
+
+def update_row(worksheet_name, row_num, mapping):
+    """Actualiza celdas específicas de una fila. mapping = {col_header: new_value}"""
+    ws = get_sheet().worksheet(worksheet_name)
+    headers = ws.row_values(1)
+    for col_name, value in mapping.items():
+        if col_name in headers:
+            col_idx = headers.index(col_name) + 1
+            ws.update_cell(row_num, col_idx, value)
+    load_data.clear()
+    load_participantes.clear()
+    log_actividad("Registro editado", f"Hoja: {worksheet_name} — fila {row_num} — {mapping}")
 
 
 def soft_delete(worksheet_name, row_num):
@@ -207,6 +239,7 @@ def soft_delete(worksheet_name, row_num):
         return False, "Columna 'Activo' no existe. Agrégala al Sheet primero."
     ws.update_cell(row_num, idx, "FALSE")
     load_data.clear()
+    log_actividad("Registro eliminado", f"Hoja: {worksheet_name} — fila {row_num}")
     return True, ""
 
 

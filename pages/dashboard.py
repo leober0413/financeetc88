@@ -1,10 +1,97 @@
 import streamlit as st
+import pandas as pd
 from utils import (
-    CUOTA_ESPERADA, MOBILE_CSS,
-    load_data, load_demo_data, soft_delete,
+    CUOTA_ESPERADA, MOBILE_CSS, CONCEPTOS_PAGO, FUENTES_PAGO,
+    load_data, load_demo_data, soft_delete, update_row,
 )
 
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
+
+# ------------------------------------------------------------------
+# Dialogs de confirmación
+# ------------------------------------------------------------------
+@st.dialog("Editar pago")
+def _dlg_edit_pago(row, row_num, nombres_m):
+    st.caption(f"{row['Miembro']} — {row['Concepto']} — ${row['Monto']:,.0f}")
+    e_miembro  = st.selectbox("Miembro",  nombres_m,      index=nombres_m.index(row["Miembro"]) if row["Miembro"] in nombres_m else 0)
+    e_concepto = st.selectbox("Concepto", CONCEPTOS_PAGO, index=CONCEPTOS_PAGO.index(row["Concepto"]) if row["Concepto"] in CONCEPTOS_PAGO else 0)
+    e_monto    = st.number_input("Monto (RD$)", value=float(row["Monto"]), min_value=0.0, step=100.0)
+    e_fuente   = st.selectbox("Fuente",   FUENTES_PAGO,   index=FUENTES_PAGO.index(row["Fuente"]) if row["Fuente"] in FUENTES_PAGO else 0)
+    e_nota     = st.text_input("Nota", value=str(row.get("Nota", "")))
+    c1, c2 = st.columns(2)
+    if c1.button("Guardar", type="primary", use_container_width=True):
+        update_row("Pagos", row_num, {"Miembro": e_miembro, "Concepto": e_concepto, "Monto": e_monto, "Fuente": e_fuente, "Nota": e_nota})
+        st.rerun()
+    if c2.button("Cancelar", use_container_width=True):
+        st.rerun()
+
+@st.dialog("Confirmar eliminación")
+def _dlg_del_pago(label, row_num):
+    st.warning(f"¿Eliminar **{label}**?", icon="⚠️")
+    c1, c2 = st.columns(2)
+    if c1.button("Sí, eliminar", type="primary", use_container_width=True):
+        ok, msg = soft_delete("Pagos", row_num)
+        if ok:
+            load_data.clear()
+            st.rerun()
+        else:
+            st.error(msg)
+    if c2.button("Cancelar", use_container_width=True):
+        st.rerun()
+
+@st.dialog("Editar gasto")
+def _dlg_edit_gasto(row, row_num):
+    st.caption(f"{row.get('Concepto','')} — ${row['Monto']:,.0f}")
+    e_concepto = st.text_input("Concepto", value=str(row.get("Concepto", "")))
+    e_monto    = st.number_input("Monto (RD$)", value=float(row["Monto"]), min_value=0.0, step=100.0)
+    e_fuente   = st.text_input("Fuente", value=str(row.get("Fuente", "")))
+    c1, c2 = st.columns(2)
+    if c1.button("Guardar", type="primary", use_container_width=True):
+        update_row("Gastos", row_num, {"Concepto": e_concepto, "Monto": e_monto, "Fuente": e_fuente})
+        st.rerun()
+    if c2.button("Cancelar", use_container_width=True):
+        st.rerun()
+
+@st.dialog("Confirmar eliminación")
+def _dlg_del_gasto(label, row_num):
+    st.warning(f"¿Eliminar **{label}**?", icon="⚠️")
+    c1, c2 = st.columns(2)
+    if c1.button("Sí, eliminar", type="primary", use_container_width=True):
+        ok, msg = soft_delete("Gastos", row_num)
+        if ok:
+            load_data.clear()
+            st.rerun()
+        else:
+            st.error(msg)
+    if c2.button("Cancelar", use_container_width=True):
+        st.rerun()
+
+@st.dialog("Editar donación")
+def _dlg_edit_don(row, row_num):
+    st.caption(f"{row.get('Donante','')} — ${row['Monto']:,.0f}")
+    e_donante = st.text_input("Donante", value=str(row.get("Donante", "")))
+    e_monto   = st.number_input("Monto (RD$)", value=float(row["Monto"]), min_value=0.0, step=100.0)
+    e_nota    = st.text_input("Nota", value=str(row.get("Nota", "")))
+    c1, c2 = st.columns(2)
+    if c1.button("Guardar", type="primary", use_container_width=True):
+        update_row("Donaciones", row_num, {"Donante": e_donante, "Monto": e_monto, "Nota": e_nota})
+        st.rerun()
+    if c2.button("Cancelar", use_container_width=True):
+        st.rerun()
+
+@st.dialog("Confirmar eliminación")
+def _dlg_del_don(label, row_num):
+    st.warning(f"¿Eliminar **{label}**?", icon="⚠️")
+    c1, c2 = st.columns(2)
+    if c1.button("Sí, eliminar", type="primary", use_container_width=True):
+        ok, msg = soft_delete("Donaciones", row_num)
+        if ok:
+            load_data.clear()
+            st.rerun()
+        else:
+            st.error(msg)
+    if c2.button("Cancelar", use_container_width=True):
+        st.rerun()
 
 # ------------------------------------------------------------------
 # Carga de datos
@@ -146,7 +233,7 @@ if "Status" in miembros_display.columns:
 
 st.dataframe(
     miembros_display,
-    use_container_width=True,
+    width='stretch',
     hide_index=True,
     height=min(36 * len(miembros_display) + 38, 480),
     column_config={
@@ -162,7 +249,7 @@ st.dataframe(
 st.divider()
 
 # ------------------------------------------------------------------
-# Tabla pagos + eliminar
+# Tabla pagos + editar/eliminar
 # ------------------------------------------------------------------
 st.subheader("Pagos registrados")
 
@@ -188,7 +275,7 @@ st.caption(f"{len(pagos_f)} de {len(pagos)} pagos")
 cols_pagos = [c for c in ["Miembro", "Concepto", "Monto", "Fuente", "Nota"] if c in pagos_f.columns]
 st.dataframe(
     pagos_f[cols_pagos],
-    use_container_width=True,
+    width='stretch',
     hide_index=True,
     height=min(36 * len(pagos_f) + 38, 400),
     column_config={
@@ -201,27 +288,30 @@ st.dataframe(
 )
 
 if not demo_mode and not pagos.empty and "_row_num" in pagos.columns:
+    labels = (
+        pagos["Miembro"].astype(str)
+        + " — " + pagos["Concepto"].astype(str)
+        + " — $" + pagos["Monto"].apply(lambda x: f"{x:,.0f}")
+    ).tolist()
+    row_nums = pagos["_row_num"].tolist()
+    nombres_m = sorted(pagos["Miembro"].dropna().unique().tolist())
+
+    with st.expander("✏️ Editar pago"):
+        sel_e = st.selectbox("Seleccionar pago", range(len(labels)),
+                             format_func=lambda i: labels[i], key="edit_pago")
+        if st.button("Abrir editor", key="btn_open_edit_pago", use_container_width=True):
+            _dlg_edit_pago(pagos.iloc[sel_e], row_nums[sel_e], nombres_m)
+
     with st.expander("🗑️ Eliminar pago"):
-        labels = (
-            pagos["Miembro"].astype(str)
-            + " — " + pagos["Concepto"].astype(str)
-            + " — $" + pagos["Monto"].apply(lambda x: f"{x:,.0f}")
-        ).tolist()
-        row_nums = pagos["_row_num"].tolist()
         sel_idx = st.selectbox("Seleccionar pago", range(len(labels)),
                                format_func=lambda i: labels[i], key="del_pago")
-        if st.button("Eliminar pago seleccionado", type="primary", key="btn_del_pago"):
-            ok, msg = soft_delete("Pagos", row_nums[sel_idx])
-            if ok:
-                st.success("Pago eliminado.")
-                st.rerun()
-            else:
-                st.error(msg)
+        if st.button("Eliminar pago", type="primary", key="btn_del_pago", use_container_width=True):
+            _dlg_del_pago(labels[sel_idx], row_nums[sel_idx])
 
 st.divider()
 
 # ------------------------------------------------------------------
-# Tabla gastos + eliminar
+# Tabla gastos + editar/eliminar
 # ------------------------------------------------------------------
 st.subheader("Gastos registrados")
 
@@ -232,7 +322,6 @@ fuentes_g_disp   = ["Todos"] + sorted(gastos["Fuente"].dropna().unique().tolist(
 concepto_g_sel = gf1.selectbox("Concepto", conceptos_g_disp, key="gasto_concepto")
 fuente_g_sel   = gf2.selectbox("Fuente",   fuentes_g_disp,   key="gasto_fuente")
 
-import pandas as pd
 if "Fecha" in gastos.columns:
     fechas_validas = pd.to_datetime(gastos["Fecha"], dayfirst=True, errors="coerce").dropna()
     fecha_min = fechas_validas.min().date() if not fechas_validas.empty else None
@@ -257,7 +346,7 @@ st.caption(f"{len(gastos_f)} de {len(gastos)} gastos")
 cols_gastos = [c for c in ["Fecha", "Concepto", "Monto", "Fuente"] if c in gastos_f.columns]
 st.dataframe(
     gastos_f[cols_gastos],
-    use_container_width=True,
+    width='stretch',
     hide_index=True,
     height=min(36 * len(gastos_f) + 38, 400),
     column_config={
@@ -269,26 +358,25 @@ st.dataframe(
 )
 
 if not demo_mode and not gastos.empty and "_row_num" in gastos.columns:
+    labels_g   = (gastos["Concepto"].astype(str) + " — $" + gastos["Monto"].apply(lambda x: f"{x:,.0f}")).tolist()
+    row_nums_g = gastos["_row_num"].tolist()
+
+    with st.expander("✏️ Editar gasto"):
+        sel_eg = st.selectbox("Seleccionar gasto", range(len(labels_g)),
+                              format_func=lambda i: labels_g[i], key="edit_gasto")
+        if st.button("Abrir editor", key="btn_open_edit_gasto", use_container_width=True):
+            _dlg_edit_gasto(gastos.iloc[sel_eg], row_nums_g[sel_eg])
+
     with st.expander("🗑️ Eliminar gasto"):
-        labels_g = (
-            gastos["Concepto"].astype(str)
-            + " — $" + gastos["Monto"].apply(lambda x: f"{x:,.0f}")
-        ).tolist()
-        row_nums_g = gastos["_row_num"].tolist()
         sel_idx_g = st.selectbox("Seleccionar gasto", range(len(labels_g)),
                                  format_func=lambda i: labels_g[i], key="del_gasto")
-        if st.button("Eliminar gasto seleccionado", type="primary", key="btn_del_gasto"):
-            ok, msg = soft_delete("Gastos", row_nums_g[sel_idx_g])
-            if ok:
-                st.success("Gasto eliminado.")
-                st.rerun()
-            else:
-                st.error(msg)
+        if st.button("Eliminar gasto", type="primary", key="btn_del_gasto", use_container_width=True):
+            _dlg_del_gasto(labels_g[sel_idx_g], row_nums_g[sel_idx_g])
 
 st.divider()
 
 # ------------------------------------------------------------------
-# Tabla donaciones
+# Tabla donaciones + editar/eliminar
 # ------------------------------------------------------------------
 st.subheader("Donaciones")
 if donaciones.empty:
@@ -297,7 +385,7 @@ else:
     cols_don = [c for c in ["Fecha", "Donante", "Monto", "Nota"] if c in donaciones.columns]
     st.dataframe(
         donaciones[cols_don],
-        use_container_width=True,
+        width='stretch',
         hide_index=True,
         height=min(36 * len(donaciones) + 38, 300),
         column_config={
@@ -307,6 +395,22 @@ else:
             "Nota":    st.column_config.TextColumn("Nota",    width="large"),
         },
     )
+
+    if not demo_mode and "_row_num" in donaciones.columns:
+        labels_don   = (donaciones["Donante"].astype(str) + " — $" + donaciones["Monto"].apply(lambda x: f"{x:,.0f}")).tolist()
+        row_nums_don = donaciones["_row_num"].tolist()
+
+        with st.expander("✏️ Editar donación"):
+            sel_ed = st.selectbox("Seleccionar donación", range(len(labels_don)),
+                                  format_func=lambda i: labels_don[i], key="edit_don")
+            if st.button("Abrir editor", key="btn_open_edit_don", use_container_width=True):
+                _dlg_edit_don(donaciones.iloc[sel_ed], row_nums_don[sel_ed])
+
+        with st.expander("🗑️ Eliminar donación"):
+            sel_dd = st.selectbox("Seleccionar donación", range(len(labels_don)),
+                                  format_func=lambda i: labels_don[i], key="del_don")
+            if st.button("Eliminar donación", type="primary", key="btn_del_don", use_container_width=True):
+                _dlg_del_don(labels_don[sel_dd], row_nums_don[sel_dd])
 
 st.divider()
 
@@ -331,7 +435,7 @@ st.altair_chart(
         xOffset="Tipo:N",
         tooltip=["Rol", "Tipo", alt.Tooltip("Monto:Q", format="$,.0f")],
     ).properties(height=350),
-    use_container_width=True,
+    width='stretch',
 )
 
 # ------------------------------------------------------------------
