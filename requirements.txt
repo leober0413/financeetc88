@@ -1,6 +1,6 @@
-streamlit
-gspread
-google-auth
-pandas
-altair
-streamlit-authenticator
+streamlit==1.58.0
+gspread==6.2.1
+google-auth==2.55.1
+pandas==3.0.3
+altair==6.2.2
+streamlit-authenticator==0.4.2
