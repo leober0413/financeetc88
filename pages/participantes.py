@@ -10,11 +10,12 @@ st.markdown(MOBILE_CSS, unsafe_allow_html=True)
 @st.dialog("Editar participante")
 def _dlg_edit_part(row, row_num):
     st.caption(str(row.get("Nombre", "")))
-    e_nombre   = st.text_input("Nombre",   value=str(row.get("Nombre", "")))
-    e_telefono = st.text_input("Teléfono", value=str(row.get("Telefono", "")))
+    e_nombre      = st.text_input("Nombre",               value=str(row.get("Nombre", "")))
+    e_invitado    = st.text_input("Invitado por",         value=str(row.get("Invitado por", "")))
+    e_telefono    = st.text_input("Teléfono",             value=str(row.get("Telefono", "")))
     c1, c2 = st.columns(2)
     if c1.button("Guardar", type="primary", use_container_width=True):
-        update_row("Participantes", row_num, {"Nombre": e_nombre, "Telefono": e_telefono})
+        update_row("Participantes", row_num, {"Nombre": e_nombre, "Telefono": e_telefono, "Invitado por": e_invitado})
         load_participantes.clear()
         st.rerun()
     if c2.button("Cancelar", use_container_width=True):
@@ -113,7 +114,7 @@ st.subheader(f"Participantes ({total_part})")
 if participantes.empty:
     st.info("No hay participantes registrados aún.")
 else:
-    cols_p = [c for c in ["Nombre", "Telefono", "Total Aportado", "Status"] if c in participantes.columns]
+    cols_p = [c for c in ["Nombre", "Invitado por", "Telefono", "Total Aportado", "Status"] if c in participantes.columns]
     part_display = participantes[cols_p].copy()
     if "Status" in part_display.columns:
         part_display["Status"] = part_display["Status"].map(
@@ -123,12 +124,13 @@ else:
         part_display,
         width='stretch',
         hide_index=True,
-        height=min(36 * len(part_display) + 38, 400),
+        height=min(36 * len(part_display) + 38, 480),
         column_config={
-            "Nombre":         st.column_config.TextColumn("Participante", width="large"),
-            "Telefono":       st.column_config.TextColumn("Teléfono",     width="medium"),
-            "Total Aportado": st.column_config.NumberColumn("Aportado",   format="$%.0f", width="small"),
-            "Status":         st.column_config.TextColumn("Estado",       width="medium"),
+            "Nombre":         st.column_config.TextColumn("Participante",  width="large"),
+            "Invitado por":   st.column_config.TextColumn("Invitado por",  width="medium"),
+            "Telefono":       st.column_config.TextColumn("Teléfono",      width="medium"),
+            "Total Aportado": st.column_config.NumberColumn("Aportado",    format="$%.0f", width="small"),
+            "Status":         st.column_config.TextColumn("Estado",        width="medium"),
         },
     )
 

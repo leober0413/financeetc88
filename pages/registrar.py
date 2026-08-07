@@ -107,19 +107,34 @@ with tab_donacion:
 
 # ── Participante ──────────────────────────────────────────────────
 with tab_part:
+    st.markdown("""
+    <div style="background:#7C2D12;border-left:4px solid #EF4444;border-radius:8px;
+                padding:12px 16px;margin-bottom:16px;">
+        <div style="color:#FCA5A5;font-size:0.75rem;font-weight:700;letter-spacing:0.08em;
+                    text-transform:uppercase;margin-bottom:4px;">⚠️ Importante</div>
+        <div style="color:#FEE2E2;font-size:0.875rem;line-height:1.5;">
+            Quien invita es <strong>responsable directo</strong> del participante —
+            de su conducta, asistencia y pago durante el retiro.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
     with st.form("form_participante", clear_on_submit=True):
-        nombre_part   = st.text_input("Nombre completo",    disabled=demo_mode)
-        telefono_part = st.text_input("Teléfono (opcional)", disabled=demo_mode)
+        nombre_part    = st.text_input("Nombre completo del participante", disabled=demo_mode)
+        invitado_por_v = st.text_input("Invitado por (miembro responsable)", disabled=demo_mode)
+        telefono_part  = st.text_input("Teléfono (opcional)", disabled=demo_mode)
         submitted_part = st.form_submit_button("Guardar participante", type="primary",
                                                use_container_width=True, disabled=demo_mode)
 
     if submitted_part and not demo_mode:
         if not nombre_part.strip():
             st.error("El nombre no puede estar vacío.")
+        elif not invitado_por_v.strip():
+            st.error("Debes indicar quién invita al participante.")
         else:
             try:
-                append_participante(nombre_part.strip(), telefono_part.strip())
-                st.success(f"Participante '{nombre_part.strip()}' registrado.")
+                append_participante(nombre_part.strip(), telefono_part.strip(), invitado_por_v.strip())
+                st.success(f"Participante '{nombre_part.strip()}' registrado. Responsable: {invitado_por_v.strip()}.")
                 st.rerun()
             except Exception as e:
                 st.error(f"Error al guardar: {e}")

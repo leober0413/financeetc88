@@ -190,7 +190,7 @@ def append_donacion(fecha, donante, monto, nota):
     log_actividad("Donación registrada", f"{donante} — ${monto:,.0f}")
 
 
-def append_participante(nombre, telefono):
+def append_participante(nombre, telefono, invitado_por=""):
     ws = get_sheet().worksheet("Participantes")
     col_a = ws.col_values(1)
     next_row = len(col_a) + 1
@@ -201,12 +201,14 @@ def append_participante(nombre, telefono):
             telefono,
             f"=IF(A{r}=\"\",\"\",SUMIF('Pagos Participantes'!$A$2:$A$500,A{r},'Pagos Participantes'!$C$2:$C$500))",
             f"=IF(A{r}=\"\",\"\",IF(Resumen!$B$4=0,\"Definir cuota\",IF(C{r}>=Resumen!$B$4,\"PAGO COMPLETO\",\"PENDIENTE\")))",
+            "TRUE",
+            invitado_por,
         ]],
-        range_name=f"A{r}:D{r}",
+        range_name=f"A{r}:F{r}",
         value_input_option="USER_ENTERED",
     )
     load_participantes.clear()
-    log_actividad("Participante registrado", f"{nombre} — Tel: {telefono}")
+    log_actividad("Participante registrado", f"{nombre} — Invitado por: {invitado_por}")
 
 
 def append_pago_participante(participante, concepto, monto, fecha, nota):
