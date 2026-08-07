@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 from utils import (
     CUOTA_ESPERADA, MOBILE_CSS, CONCEPTOS_PAGO, FUENTES_PAGO,
-    load_data, load_demo_data, soft_delete, update_row,
+    load_data, load_demo_data, load_participantes, load_demo_participantes,
+    load_cuota_participante, soft_delete, update_row,
 )
 
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
@@ -104,8 +105,12 @@ if demo_mode:
         icon="⚠️",
     )
     miembros, pagos, gastos, donaciones = load_demo_data()
+    participantes, pagos_part = load_demo_participantes()
+    cuota_part = 0
 else:
     miembros, pagos, gastos, donaciones = load_data()
+    participantes, pagos_part = load_participantes()
+    cuota_part = load_cuota_participante()
 
 # ------------------------------------------------------------------
 # Encabezado
@@ -150,6 +155,11 @@ balance          = entradas - salidas
 
 pct_recaudado = int(total_cuotas / total_esperado * 100) if total_esperado > 0 else 0
 
+total_part     = len(participantes)
+recaudado_part = pagos_part["Monto"].sum() if not pagos_part.empty and "Monto" in pagos_part.columns else 0
+esperado_part  = total_part * cuota_part
+pct_part       = int(recaudado_part / esperado_part * 100) if esperado_part > 0 else 0
+
 def kpi_card(label, value, sublabel="\u00a0", accent="#3B82F6"):
     return f"""
     <div style="background:#1E293B;border-radius:12px;padding:16px 18px;
@@ -182,15 +192,17 @@ def kpi_grid(*cards):
     """
 
 cards_html = "".join([
-    f'<div>{kpi_card("Total esperado",    f"${total_esperado:,.0f}", f"{total_miembros} miembros × RD$2,000", "#6366F1")}</div>',
-    f'<div>{kpi_card("Cuotas recaudadas", f"${total_cuotas:,.0f}",   f"{pct_recaudado}% del total esperado",  "#10B981")}</div>',
-    f'<div>{kpi_card("Pendiente",         f"${pendiente:,.0f}",       "por cobrar en cuotas",                  "#EF4444" if pendiente > 0 else "#10B981")}</div>',
-    f'<div>{kpi_card("Donaciones",        f"${total_donaciones:,.0f}","ingresos externos",                     "#F59E0B")}</div>',
-    f'<div>{kpi_card("Entradas totales",  f"${entradas:,.0f}",        "cuotas + otros + donaciones",           "#06B6D4")}</div>',
-    f'<div>{kpi_card("Balance",           f"${balance:,.0f}",         "entradas − salidas",                    "#10B981" if balance >= 0 else "#EF4444")}</div>',
+    f'<div>{kpi_card("Total esperado",          f"${total_esperado:,.0f}",  f"{total_miembros} miembros × RD$2,000",                        "#6366F1")}</div>',
+    f'<div>{kpi_card("Cuotas recaudadas",       f"${total_cuotas:,.0f}",    f"{pct_recaudado}% del total esperado",                         "#10B981")}</div>',
+    f'<div>{kpi_card("Pendiente",               f"${pendiente:,.0f}",       "por cobrar en cuotas",                                         "#EF4444" if pendiente > 0 else "#10B981")}</div>',
+    f'<div>{kpi_card("Donaciones",              f"${total_donaciones:,.0f}","ingresos externos",                                            "#F59E0B")}</div>',
+    f'<div>{kpi_card("Entradas totales",        f"${entradas:,.0f}",        "cuotas + otros + donaciones",                                  "#06B6D4")}</div>',
+    f'<div>{kpi_card("Balance",                 f"${balance:,.0f}",         "entradas − salidas",                                           "#10B981" if balance >= 0 else "#EF4444")}</div>',
+    f'<div>{kpi_card("Esperado participantes",  f"${esperado_part:,.0f}" if cuota_part > 0 else "Cuota por definir", f"{total_part} participantes × RD${cuota_part:,}" if cuota_part > 0 else f"{total_part} participantes registrados", "#8B5CF6")}</div>',
+    f'<div>{kpi_card("Recaudado participantes", f"${recaudado_part:,.0f}",  f"{pct_part}% del esperado" if cuota_part > 0 else "pagos registrados",                     "#A78BFA")}</div>',
 ])
 st.markdown(f"""
-<div class="kpi-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+<div class="kpi-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
 {cards_html}
 </div>
 <style>

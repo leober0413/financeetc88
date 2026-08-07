@@ -55,6 +55,17 @@ def _ws_to_df(ws):
     return df
 
 
+@st.cache_data(ttl=120)
+def load_cuota_participante():
+    """Lee cuota esperada del retiro desde Resumen!B4. Retorna int."""
+    try:
+        ws = get_sheet().worksheet("Resumen")
+        val = ws.acell("B4").value
+        return int(str(val).replace("$", "").replace(",", "").strip()) if val else 0
+    except Exception:
+        return 0
+
+
 @st.cache_data(ttl=60)
 def load_data():
     sh = get_sheet()

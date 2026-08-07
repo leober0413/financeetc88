@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from utils import CUOTA_ESPERADA, MOBILE_CSS, load_data, load_demo_data
+from utils import CUOTA_ESPERADA, MOBILE_CSS, load_data, load_demo_data, load_participantes, load_demo_participantes, load_cuota_participante
 
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
 
@@ -9,8 +9,12 @@ demo_mode = "gcp_service_account" not in st.secrets
 
 if demo_mode:
     miembros, pagos, gastos, donaciones = load_demo_data()
+    participantes, pagos_part = load_demo_participantes()
+    cuota_part = 0
 else:
     miembros, pagos, gastos, donaciones = load_data()
+    participantes, pagos_part = load_participantes()
+    cuota_part = load_cuota_participante()
 
 # ------------------------------------------------------------------
 # Encabezado
@@ -34,6 +38,12 @@ pct_recaudado    = int(total_cuotas / total_esperado * 100) if total_esperado > 
 al_dia    = (miembros["Status"] == "PAGO COMPLETO").sum() if "Status" in miembros.columns else 0
 pendientes = total_miembros - al_dia
 
+total_part          = len(participantes)
+recaudado_part      = pagos_part["Monto"].sum() if not pagos_part.empty and "Monto" in pagos_part.columns else 0
+esperado_part       = total_part * cuota_part
+pct_part            = int(recaudado_part / esperado_part * 100) if esperado_part > 0 else 0
+esperado_part_label = f"${esperado_part:,.0f} ({total_part} × RD${cuota_part:,})" if cuota_part > 0 else f"{total_part} participantes · cuota por definir"
+
 # ------------------------------------------------------------------
 # KPIs
 # ------------------------------------------------------------------
@@ -53,16 +63,18 @@ def kpi_card(label, value, sublabel="\u00a0", accent="#3B82F6"):
     </div>"""
 
 cards_html = "".join([
-    f'<div>{kpi_card("Meta del equipo",     f"${total_esperado:,.0f}",  f"{total_miembros} miembros × RD$2,000",   "#6366F1")}</div>',
-    f'<div>{kpi_card("Cuotas recaudadas",   f"${total_cuotas:,.0f}",    f"{pct_recaudado}% de la meta",             "#10B981")}</div>',
-    f'<div>{kpi_card("Donaciones",          f"${total_donaciones:,.0f}","ingresos externos",                        "#F59E0B")}</div>',
-    f'<div>{kpi_card("Entradas totales",    f"${entradas:,.0f}",        "cuotas + otros + donaciones",              "#06B6D4")}</div>',
-    f'<div>{kpi_card("Gastos",              f"${salidas:,.0f}",         "salidas registradas",                      "#EF4444")}</div>',
-    f'<div>{kpi_card("Balance",             f"${balance:,.0f}",         "entradas − gastos",                        "#10B981" if balance >= 0 else "#EF4444")}</div>',
+    f'<div>{kpi_card("Meta del equipo",         f"${total_esperado:,.0f}",    f"{total_miembros} miembros × RD$2,000", "#6366F1")}</div>',
+    f'<div>{kpi_card("Cuotas recaudadas",       f"${total_cuotas:,.0f}",      f"{pct_recaudado}% de la meta",          "#10B981")}</div>',
+    f'<div>{kpi_card("Donaciones",              f"${total_donaciones:,.0f}",  "ingresos externos",                     "#F59E0B")}</div>',
+    f'<div>{kpi_card("Entradas totales",        f"${entradas:,.0f}",          "cuotas + otros + donaciones",           "#06B6D4")}</div>',
+    f'<div>{kpi_card("Gastos",                  f"${salidas:,.0f}",           "salidas registradas",                   "#EF4444")}</div>',
+    f'<div>{kpi_card("Balance",                 f"${balance:,.0f}",           "entradas − gastos",                     "#10B981" if balance >= 0 else "#EF4444")}</div>',
+    f'<div>{kpi_card("Esperado participantes",  esperado_part_label if cuota_part == 0 else f"${esperado_part:,.0f}", esperado_part_label if cuota_part > 0 else "\u00a0", "#8B5CF6")}</div>',
+    f'<div>{kpi_card("Recaudado participantes", f"${recaudado_part:,.0f}",    f"{pct_part}% del esperado" if cuota_part > 0 else f"{total_part} participantes", "#A78BFA")}</div>',
 ])
 
 st.markdown(f"""
-<div class="kpi-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+<div class="kpi-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
 {cards_html}
 </div>
 <style>
