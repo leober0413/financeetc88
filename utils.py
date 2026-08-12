@@ -83,10 +83,14 @@ def load_data():
     if not donaciones.empty and "Donante" in donaciones.columns:
         donaciones = donaciones[donaciones["Donante"].astype(str).str.strip() != ""]
 
+    if "Activo" in miembros.columns:
+        miembros = miembros[miembros["Activo"].astype(str).str.upper() != "FALSE"]
     if "Activo" in pagos.columns:
         pagos = pagos[pagos["Activo"].astype(str).str.upper() != "FALSE"]
     if "Activo" in gastos.columns:
         gastos = gastos[gastos["Activo"].astype(str).str.upper() != "FALSE"]
+    if "Activo" in donaciones.columns:
+        donaciones = donaciones[donaciones["Activo"].astype(str).str.upper() != "FALSE"]
 
     if "Total Aportado" in miembros.columns:
         miembros["Total Aportado"] = pd.to_numeric(miembros["Total Aportado"], errors="coerce").fillna(0)
@@ -195,7 +199,7 @@ def append_gasto(fecha, concepto, monto, fuente):
 def append_donacion(fecha, donante, monto, nota):
     ws = get_sheet().worksheet("Donaciones")
     headers = ws.row_values(1)
-    mapping = {"Fecha": str(fecha), "Donante": donante, "Monto": monto, "Nota": nota}
+    mapping = {"Fecha": str(fecha), "Donante": donante, "Monto": monto, "Nota": nota, "Activo": "TRUE"}
     ws.append_row([mapping.get(h, "") for h in headers], value_input_option="USER_ENTERED")
     load_data.clear()
     log_actividad("Donación registrada", f"{donante} — ${monto:,.0f}")
@@ -252,6 +256,7 @@ def soft_delete(worksheet_name, row_num):
         return False, "Columna 'Activo' no existe. Agrégala al Sheet primero."
     ws.update_cell(row_num, idx, "FALSE")
     load_data.clear()
+    load_participantes.clear()
     log_actividad("Registro eliminado", f"Hoja: {worksheet_name} — fila {row_num}")
     return True, ""
 
