@@ -145,20 +145,25 @@ if status_sel != "Todos":
 # ------------------------------------------------------------------
 total_miembros   = len(miembros)
 total_esperado   = total_miembros * CUOTA_ESPERADA
-total_cuotas     = pagos.loc[pagos["Concepto"].astype(str).str.startswith("Cuota"), "Monto"].sum()
-pendiente        = total_esperado - total_cuotas
-total_tardanzas  = pagos.loc[~pagos["Concepto"].astype(str).str.startswith("Cuota"), "Monto"].sum()
-total_donaciones = donaciones["Monto"].sum() if not donaciones.empty and "Monto" in donaciones.columns else 0
-entradas         = total_cuotas + total_tardanzas + total_donaciones
-salidas          = gastos["Monto"].sum()
-balance          = entradas - salidas
 
-pct_recaudado = int(total_cuotas / total_esperado * 100) if total_esperado > 0 else 0
+# Cuotas = Concepto empieza con "Cuota"; Tardanzas = todo lo demás (Formacion X = momento del pago)
+_mask_cuota   = pagos["Concepto"].astype(str).str.startswith("Cuota")
+total_cuotas    = pagos.loc[_mask_cuota,  "Monto"].sum()
+total_tardanzas = pagos.loc[~_mask_cuota, "Monto"].sum()
+
+pendiente        = total_esperado - total_cuotas
+total_donaciones = donaciones["Monto"].sum() if not donaciones.empty and "Monto" in donaciones.columns else 0
 
 total_part     = len(participantes)
 recaudado_part = pagos_part["Monto"].sum() if not pagos_part.empty and "Monto" in pagos_part.columns else 0
 esperado_part  = total_part * cuota_part
 pct_part       = int(recaudado_part / esperado_part * 100) if esperado_part > 0 else 0
+
+entradas = total_cuotas + total_tardanzas + total_donaciones + recaudado_part
+salidas  = gastos["Monto"].sum()
+balance  = entradas - salidas
+
+pct_recaudado = int(total_cuotas / total_esperado * 100) if total_esperado > 0 else 0
 
 def kpi_card(label, value, sublabel="\u00a0", accent="#3B82F6"):
     return f"""
@@ -191,20 +196,36 @@ def kpi_grid(*cards):
     </style>
     """
 
-cards_html = "".join([
-    f'<div>{kpi_card("Total esperado",          f"${total_esperado:,.0f}",  f"{total_miembros} miembros × RD$2,000",                        "#6366F1")}</div>',
-    f'<div>{kpi_card("Cuotas recaudadas",       f"${total_cuotas:,.0f}",    f"{pct_recaudado}% del total esperado",                         "#10B981")}</div>',
-    f'<div>{kpi_card("Pendiente",               f"${pendiente:,.0f}",       "por cobrar en cuotas",                                         "#EF4444" if pendiente > 0 else "#10B981")}</div>',
-    f'<div>{kpi_card("Donaciones",              f"${total_donaciones:,.0f}","ingresos externos",                                            "#F59E0B")}</div>',
-    f'<div>{kpi_card("Entradas totales",        f"${entradas:,.0f}",        "cuotas + otros + donaciones",                                  "#06B6D4")}</div>',
-    f'<div>{kpi_card("Balance",                 f"${balance:,.0f}",         "entradas − salidas",                                           "#10B981" if balance >= 0 else "#EF4444")}</div>',
-    f'<div>{kpi_card("Esperado participantes",  f"${esperado_part:,.0f}" if cuota_part > 0 else "Cuota por definir", f"{total_part} participantes × RD${cuota_part:,}" if cuota_part > 0 else f"{total_part} participantes registrados", "#8B5CF6")}</div>',
-    f'<div>{kpi_card("Recaudado participantes", f"${recaudado_part:,.0f}",  f"{pct_part}% del esperado" if cuota_part > 0 else "pagos registrados",                     "#A78BFA")}</div>',
-])
+def kpi_section(title, *cards):
+    inner = "".join(f'<div>{c}</div>' for c in cards)
+    return f"""
+<div style="margin-bottom:18px;">
+  <div style="color:#64748B;font-size:0.65rem;font-weight:700;letter-spacing:0.1em;
+              text-transform:uppercase;margin-bottom:8px;padding-left:2px;">{title}</div>
+  <div class="kpi-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+    {inner}
+  </div>
+</div>"""
+
 st.markdown(f"""
-<div class="kpi-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
-{cards_html}
-</div>
+{kpi_section("📊 Estimado",
+    kpi_card("Total esperado",         f"${total_esperado:,.0f}",  f"{total_miembros} miembros × RD$2,000",                        "#6366F1"),
+    kpi_card("Cuotas recaudadas",      f"${total_cuotas:,.0f}",    f"{pct_recaudado}% del total esperado",                         "#10B981"),
+    kpi_card("Pendiente cuotas",       f"${pendiente:,.0f}",       "por cobrar en cuotas",                                         "#EF4444" if pendiente > 0 else "#10B981"),
+    kpi_card("Esperado participantes", f"${esperado_part:,.0f}" if cuota_part > 0 else "Cuota por definir",
+             f"{total_part} participantes × RD${cuota_part:,}" if cuota_part > 0 else f"{total_part} participantes registrados",   "#8B5CF6"),
+)}
+{kpi_section("💰 Entradas",
+    kpi_card("Cuotas",              f"${total_cuotas:,.0f}",    "pagos de cuota miembros",                                      "#10B981"),
+    kpi_card("Tardanzas",          f"${total_tardanzas:,.0f}", "multas cobradas en formaciones",                               "#F97316"),
+    kpi_card("Donaciones",         f"${total_donaciones:,.0f}","ingresos externos",                                            "#F59E0B"),
+    kpi_card("Pagos participantes",f"${recaudado_part:,.0f}",  f"{pct_part}% del esperado" if cuota_part > 0 else f"{total_part} participantes", "#A78BFA"),
+)}
+{kpi_section("📤 Salidas & Balance",
+    kpi_card("Salidas",        f"${salidas:,.0f}",  "total de gastos",      "#EF4444"),
+    kpi_card("Entradas totales",f"${entradas:,.0f}","cuotas + tard. + don. + part.", "#06B6D4"),
+    kpi_card("Balance",        f"${balance:,.0f}",  "entradas − salidas",   "#10B981" if balance >= 0 else "#EF4444"),
+)}
 <style>
 @media(max-width:640px){{
   .kpi-grid {{ grid-template-columns: repeat(2,1fr) !important; gap:8px !important; }}
@@ -216,16 +237,35 @@ st.markdown(f"""
 
 st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
 pct_bar_color = "#10B981" if pct_recaudado >= 80 else "#F59E0B" if pct_recaudado >= 50 else "#EF4444"
+pct_part_color = "#10B981" if pct_part >= 80 else "#F59E0B" if pct_part >= 50 else "#EF4444"
+falta_part = max(esperado_part - recaudado_part, 0)
+
 st.markdown(f"""
-<div style="background:#1E293B;border-radius:8px;padding:10px 16px;margin-bottom:4px;">
-    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-        <span style="color:#94A3B8;font-size:0.75rem;font-weight:600;">PROGRESO DE RECAUDO</span>
-        <span style="color:#F1F5F9;font-size:0.75rem;font-weight:700;">{pct_recaudado}%</span>
-    </div>
-    <div style="background:#334155;border-radius:4px;height:8px;">
-        <div style="background:{pct_bar_color};width:{min(pct_recaudado,100)}%;
-                    height:8px;border-radius:4px;transition:width 0.3s;"></div>
-    </div>
+<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px;">
+  <div style="background:#1E293B;border-radius:8px;padding:10px 16px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="color:#94A3B8;font-size:0.75rem;font-weight:600;">PROGRESO DE RECAUDO — MIEMBROS</span>
+          <span style="color:#F1F5F9;font-size:0.75rem;font-weight:700;">
+            {pct_recaudado}% · falta ${pendiente:,.0f} · recaudado ${total_cuotas:,.0f}
+          </span>
+      </div>
+      <div style="background:#334155;border-radius:4px;height:8px;">
+          <div style="background:{pct_bar_color};width:{min(pct_recaudado,100)}%;
+                      height:8px;border-radius:4px;transition:width 0.3s;"></div>
+      </div>
+  </div>
+  <div style="background:#1E293B;border-radius:8px;padding:10px 16px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <span style="color:#94A3B8;font-size:0.75rem;font-weight:600;">PROGRESO DE RECAUDO — PARTICIPANTES</span>
+          <span style="color:#F1F5F9;font-size:0.75rem;font-weight:700;">
+            {f"{pct_part}% · falta ${falta_part:,.0f}" if cuota_part > 0 else f"${recaudado_part:,.0f} recaudado · cuota por definir"}
+          </span>
+      </div>
+      <div style="background:#334155;border-radius:4px;height:8px;">
+          <div style="background:{pct_part_color};width:{min(pct_part,100) if cuota_part > 0 else 0}%;
+                      height:8px;border-radius:4px;transition:width 0.3s;"></div>
+      </div>
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -351,7 +391,8 @@ if fuente_g_sel   != "Todos":
     gastos_f = gastos_f[gastos_f["Fuente"]   == fuente_g_sel]
 if fecha_desde and fecha_hasta and "Fecha" in gastos_f.columns:
     fechas_parsed = pd.to_datetime(gastos_f["Fecha"], dayfirst=True, errors="coerce")
-    gastos_f = gastos_f[(fechas_parsed.dt.date >= fecha_desde) & (fechas_parsed.dt.date <= fecha_hasta)]
+    en_rango = (fechas_parsed.dt.date >= fecha_desde) & (fechas_parsed.dt.date <= fecha_hasta)
+    gastos_f = gastos_f[en_rango | fechas_parsed.isna()]  # sin fecha válida siempre visible
 
 st.caption(f"{len(gastos_f)} de {len(gastos)} gastos")
 
