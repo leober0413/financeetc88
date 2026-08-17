@@ -134,7 +134,7 @@ with tab_dir:
     if dir_items:
         df = pd.DataFrame(dir_items)
         df = df[df["Total"] > 0]
-        donados = (df["Estado"] == "🎁").sum()
+        donados = (df["Estado"] == "🎁 Donado").sum()
         st.caption(f"{donados} ítems donados")
         st.dataframe(
             df,
@@ -159,7 +159,7 @@ with tab_cocina:
         df = pd.DataFrame(cocina_items)
         df = df[df["Total"] > 0]
         verificados = (df["Verificado"] == "✅").sum()
-        donados = (df["Estado"] == "🎁").sum()
+        donados = (df["Estado"] == "🎁 Donado").sum()
         st.caption(f"{verificados} de {len(df)} ítems verificados · {donados} donados")
         st.dataframe(
             df,
@@ -182,7 +182,7 @@ with tab_musica:
     c3.metric("Ahorro / Donado", f"${d['total'] - d['real']:,.0f}")
     if musica_items:
         df = pd.DataFrame(musica_items)
-        donados = (df["Estado"] == "🎁").sum()
+        donados = (df["Estado"] == "🎁 Donado").sum()
         st.caption(f"{donados} ítems donados")
         st.dataframe(
             df,
@@ -206,7 +206,7 @@ with tab_guias:
     if guia_items:
         df = pd.DataFrame(guia_items)
         df = df[df["Total"] > 0]
-        donados = (df["Estado"] == "🎁").sum()
+        donados = (df["Estado"] == "🎁 Donado").sum()
         st.caption(f"{donados} ítems donados")
         st.dataframe(
             df,
