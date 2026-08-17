@@ -1,6 +1,10 @@
 import streamlit as st
 import pandas as pd
-from utils import MOBILE_CSS, load_presupuesto
+try:
+    from utils import MOBILE_CSS, load_presupuesto
+except Exception as _e:
+    st.error(f"**Error importando utils:** `{type(_e).__name__}: {_e}`")
+    st.stop()
 
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
 
