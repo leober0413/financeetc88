@@ -130,10 +130,12 @@ with tab_dir:
     c1, c2, c3 = st.columns(3)
     c1.metric("Presupuestado", f"${d['total']:,.0f}")
     c2.metric("Costo real", f"${d['real']:,.0f}")
-    c3.metric("Ahorro", f"${d['total'] - d['real']:,.0f}")
+    c3.metric("Ahorro / Donado", f"${d['total'] - d['real']:,.0f}")
     if dir_items:
         df = pd.DataFrame(dir_items)
         df = df[df["Total"] > 0]
+        donados = (df["Estado"] == "🎁 Donado").sum()
+        st.caption(f"{donados} ítems donados")
         st.dataframe(
             df,
             hide_index=True,
@@ -142,6 +144,7 @@ with tab_dir:
             column_config={
                 "Material": st.column_config.TextColumn("Material", width="large"),
                 "Total":    st.column_config.NumberColumn("Total RD$", format="$%.0f", width="small"),
+                "Estado":   st.column_config.TextColumn("Estado", width="small"),
                 "Nota":     st.column_config.TextColumn("Nota", width="large"),
             },
         )
@@ -151,12 +154,13 @@ with tab_cocina:
     c1, c2, c3 = st.columns(3)
     c1.metric("Presupuestado", f"${d['total']:,.0f}")
     c2.metric("Costo real", f"${d['real']:,.0f}")
-    c3.metric("Ahorro", f"${d['total'] - d['real']:,.0f}")
+    c3.metric("Ahorro / Donado", f"${d['total'] - d['real']:,.0f}")
     if cocina_items:
         df = pd.DataFrame(cocina_items)
         df = df[df["Total"] > 0]
         verificados = (df["Verificado"] == "✅").sum()
-        st.caption(f"{verificados} de {len(df)} ítems verificados")
+        donados = (df["Estado"] == "🎁 Donado").sum()
+        st.caption(f"{verificados} de {len(df)} ítems verificados · {donados} donados")
         st.dataframe(
             df,
             hide_index=True,
@@ -165,7 +169,8 @@ with tab_cocina:
             column_config={
                 "Artículo":   st.column_config.TextColumn("Artículo", width="large"),
                 "Total":      st.column_config.NumberColumn("Total RD$", format="$%.0f", width="small"),
-                "Verificado": st.column_config.TextColumn("Estado", width="small"),
+                "Estado":     st.column_config.TextColumn("Estado", width="small"),
+                "Verificado": st.column_config.TextColumn("Verif.", width="small"),
             },
         )
 
@@ -201,6 +206,8 @@ with tab_guias:
     if guia_items:
         df = pd.DataFrame(guia_items)
         df = df[df["Total"] > 0]
+        donados = (df["Estado"] == "🎁 Donado").sum()
+        st.caption(f"{donados} ítems donados")
         st.dataframe(
             df,
             hide_index=True,
@@ -209,6 +216,7 @@ with tab_guias:
             column_config={
                 "Material": st.column_config.TextColumn("Material", width="large"),
                 "Total":    st.column_config.NumberColumn("Total RD$", format="$%.0f", width="small"),
+                "Estado":   st.column_config.TextColumn("Estado", width="small"),
                 "Nota":     st.column_config.TextColumn("Nota", width="large"),
             },
         )
