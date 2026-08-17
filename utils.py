@@ -5,6 +5,7 @@ from google.oauth2.service_account import Credentials
 from datetime import datetime
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+DAC_SHEET_ID = "1ZhWy75PdC8coExMOCbhfzd_0l1KHPL7_SYW3qA0CIz4"
 CUOTA_ESPERADA = 2000
 CONCEPTOS_PAGO = [
     "Cuota 1", "Cuota 2", "Cuota 3", "Cuota 4",
@@ -16,6 +17,96 @@ CONCEPTOS_PARTICIPANTE = [
     "Abono 1", "Abono 2", "Abono 3",
     "Pago Completo", "Beca/Descuento",
 ]
+
+
+def _parse_money(val):
+    """Convierte string tipo ' $ 1,234.56 ' a float."""
+    try:
+        return float(str(val).replace("$", "").replace(",", "").replace(" ", "").strip())
+    except (ValueError, TypeError):
+        return 0.0
+
+
+@st.cache_resource
+def get_dac_sheet():
+    creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"], scopes=SCOPES
+    )
+    return gspread.authorize(creds).open_by_key(DAC_SHEET_ID)
+
+
+@st.cache_data(ttl=300)
+def load_presupuesto():
+    sh = get_dac_sheet()
+
+    # --- Resumen general ---
+    gen_rows = sh.worksheet("General").get_all_values()
+    _skip = {"", "Balance (entradas - gastos)", "Reduccion (PPTO versus balance)"}
+    _skip_prefix = ("Esto incluye", "Ver link", "ETC 88")
+    resumen = {}
+    for row in gen_rows[2:]:
+        nombre = row[0].strip()
+        if not nombre or nombre in _skip or any(nombre.startswith(p) for p in _skip_prefix):
+            continue
+        resumen[nombre] = {
+            "total": _parse_money(row[1]) if len(row) > 1 else 0,
+            "real":  _parse_money(row[2]) if len(row) > 2 and row[2].strip() else _parse_money(row[1]) if len(row) > 1 else 0,
+        }
+
+    # --- Cocina: headers fila 4 (idx 3), datos desde fila 5 ---
+    cocina_rows = sh.worksheet("Presupuesto Cocina").get_all_values()
+    cocina_items = []
+    for row in cocina_rows[4:]:
+        articulo = row[2].strip() if len(row) > 2 else ""
+        if not articulo or articulo == "Total":
+            continue
+        cocina_items.append({
+            "Artículo":        articulo,
+            "Total":           _parse_money(row[4]) if len(row) > 4 else 0,
+            "Verificado":      "✅" if (len(row) > 5 and row[5].strip().upper() == "YES") else "⏳",
+        })
+
+    # --- Música: headers fila 2 (idx 1), datos desde fila 3 ---
+    musica_rows = sh.worksheet("Presupuesto Musica").get_all_values()
+    musica_items = []
+    for row in musica_rows[2:]:
+        desc = row[0].strip() if row else ""
+        if not desc or desc.startswith("TOTAL"):
+            continue
+        musica_items.append({
+            "Descripción": desc,
+            "Cantidad":    row[1].strip() if len(row) > 1 else "",
+            "Total":       _parse_money(row[3]) if len(row) > 3 else 0,
+            "Estado":      "🎁 Donado" if (len(row) > 4 and row[4].strip().upper() == "DONADO") else "💰",
+        })
+
+    # --- Directores: headers fila 6 (idx 5), datos desde fila 7 ---
+    dir_rows = sh.worksheet("Presupuesto Directores").get_all_values()
+    dir_items = []
+    for row in dir_rows[6:]:
+        material = row[1].strip() if len(row) > 1 else ""
+        if not material or material.startswith("TOTAL"):
+            continue
+        dir_items.append({
+            "Material": material,
+            "Total":    _parse_money(row[6]) if len(row) > 6 else 0,
+            "Nota":     row[7].strip() if len(row) > 7 else "",
+        })
+
+    # --- Guías: headers fila 6 (idx 5), datos desde fila 7 ---
+    guia_rows = sh.worksheet("Presupuesto Guias").get_all_values()
+    guia_items = []
+    for row in guia_rows[6:]:
+        material = row[1].strip() if len(row) > 1 else ""
+        if not material or material.startswith("TOTAL"):
+            continue
+        guia_items.append({
+            "Material": material,
+            "Total":    _parse_money(row[6]) if len(row) > 6 else 0,
+            "Nota":     row[7].strip() if len(row) > 7 else "",
+        })
+
+    return resumen, cocina_items, musica_items, dir_items, guia_items
 
 
 @st.cache_resource

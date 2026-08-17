@@ -79,10 +79,11 @@ if guest_mode:
         st.markdown("</div></div>", unsafe_allow_html=True)
     pg = st.navigation([invitado])
 else:
-    dashboard     = st.Page("pages/dashboard.py",    title="Dashboard",    icon="📊", default=True)
-    registrar     = st.Page("pages/registrar.py",    title="Registrar",    icon="➕")
+    dashboard     = st.Page("pages/dashboard.py",     title="Dashboard",    icon="📊", default=True)
+    registrar     = st.Page("pages/registrar.py",     title="Registrar",    icon="➕")
     participantes = st.Page("pages/participantes.py", title="Participantes", icon="🏕️")
-    actividad     = st.Page("pages/actividad.py",    title="Actividad",    icon="📋")
-    pg = st.navigation([dashboard, registrar, participantes, actividad])
+    presupuesto   = st.Page("pages/presupuesto.py",   title="Presupuesto",  icon="💰")
+    actividad     = st.Page("pages/actividad.py",     title="Actividad",    icon="📋")
+    pg = st.navigation([dashboard, registrar, participantes, presupuesto, actividad])
 
 pg.run()
