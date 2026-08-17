@@ -84,20 +84,11 @@ cats = {
 # ------------------------------------------------------------------
 # Sección resumen general
 # ------------------------------------------------------------------
-st.markdown(f"""
-{kpi_section("📊 Resumen General",
-    kpi_card("Gran total presupuestado", f"${total_ppto:,.0f}",  "costo total planificado",         "#6366F1"),
-    kpi_card("Costo real",               f"${total_real:,.0f}",  "con donaciones aplicadas",         "#10B981"),
-    kpi_card("Ahorro por donaciones",    f"${ahorro_total:,.0f}","diferencia ppto vs real",          "#F59E0B"),
-)}
-<style>
-@media(max-width:640px){{
-  .kpi-grid {{ grid-template-columns: repeat(2,1fr) !important; gap:8px !important; }}
-  .kpi-grid > div > div {{ height:95px !important; padding:12px 14px !important; }}
-  .kpi-grid > div > div > div:nth-child(2) {{ font-size:1.15rem !important; }}
-}}
-</style>
-""", unsafe_allow_html=True)
+st.html(kpi_section("📊 Resumen General",
+    kpi_card("Gran total presupuestado", f"${total_ppto:,.0f}",  "costo total planificado",  "#6366F1"),
+    kpi_card("Costo real",               f"${total_real:,.0f}",  "con donaciones aplicadas", "#10B981"),
+    kpi_card("Ahorro por donaciones",    f"${ahorro_total:,.0f}","diferencia ppto vs real",  "#F59E0B"),
+))
 
 # ------------------------------------------------------------------
 # KPIs por categoría
@@ -113,24 +104,15 @@ for key, meta in cats.items():
         meta["accent"],
     ))
 
-st.markdown(f"""
-{kpi_section("💰 Por Categoría", *cat_cards)}
-""", unsafe_allow_html=True)
+st.html(kpi_section("💰 Por Categoría", *cat_cards))
 
 # ------------------------------------------------------------------
 # Barras de progreso por categoría
 # ------------------------------------------------------------------
-bars_html = "".join(
-    progress_bar(
-        meta["label"],
-        resumen.get(key, {}).get("real", 0),
-        resumen.get(key, {}).get("total", 0),
-        meta["accent"],
-    )
-    for key, meta in cats.items()
-)
-bars_html += progress_bar("Gran Total", total_real, total_ppto, "#06B6D4")
-st.markdown(bars_html, unsafe_allow_html=True)
+for key, meta in cats.items():
+    d = resumen.get(key, {"total": 0, "real": 0})
+    st.html(progress_bar(meta["label"], d["real"], d["total"], meta["accent"]))
+st.html(progress_bar("Gran Total", total_real, total_ppto, "#06B6D4"))
 
 st.divider()
 
