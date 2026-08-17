@@ -64,7 +64,7 @@ def load_presupuesto():
             "Artículo":        articulo,
             "Total":           _parse_money(row[4]) if len(row) > 4 else 0,
             "Verificado":      "✅" if (len(row) > 5 and row[5].strip().upper() == "YES") else "⏳",
-            "Estado":          "🎁 Donado" if (len(row) > 7 and row[7].strip().upper() == "DONADO") else "💰",
+            "Estado":          "🎁" if (len(row) > 7 and row[7].strip().upper() == "DONADO") else "",
         })
 
     # --- Música: headers fila 2 (idx 1), datos desde fila 3 ---
@@ -78,7 +78,7 @@ def load_presupuesto():
             "Descripción": desc,
             "Cantidad":    row[1].strip() if len(row) > 1 else "",
             "Total":       _parse_money(row[3]) if len(row) > 3 else 0,
-            "Estado":      "🎁 Donado" if (len(row) > 4 and row[4].strip().upper() == "DONADO") else "💰",
+            "Estado":      "🎁" if (len(row) > 4 and row[4].strip().upper() == "DONADO") else "",
         })
 
     # --- Directores: headers fila 6 (idx 5), datos desde fila 7 ---
@@ -92,7 +92,7 @@ def load_presupuesto():
             "Material": material,
             "Total":    _parse_money(row[6]) if len(row) > 6 else 0,
             "Nota":     row[7].strip() if len(row) > 7 else "",
-            "Estado":   "🎁 Donado" if (len(row) > 8 and row[8].strip().upper() == "DONADO") else "💰",
+            "Estado":   "🎁" if (len(row) > 8 and row[8].strip().upper() == "DONADO") else "",
         })
 
     # --- Guías: headers fila 6 (idx 5), datos desde fila 7 ---
@@ -106,7 +106,7 @@ def load_presupuesto():
             "Material": material,
             "Total":    _parse_money(row[6]) if len(row) > 6 else 0,
             "Nota":     row[7].strip() if len(row) > 7 else "",
-            "Estado":   "🎁 Donado" if (len(row) > 8 and row[8].strip().upper() == "DONADO") else "💰",
+            "Estado":   "🎁" if (len(row) > 8 and row[8].strip().upper() == "DONADO") else "",
         })
 
     return resumen, cocina_items, musica_items, dir_items, guia_items
