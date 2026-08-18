@@ -103,8 +103,8 @@ st.markdown(f"""
 )}
 {kpi_section("📤 Salidas & Balance",
     kpi_card("Salidas",         f"${salidas:,.0f}",   "total de gastos",       "#EF4444"),
-    kpi_card("Entradas totales",f"${entradas:,.0f}",  "cuotas + tard. + don. + part.", "#06B6D4"),
-    kpi_card("Balance",         f"${balance:,.0f}",   "entradas − salidas",    "#10B981" if balance >= 0 else "#EF4444"),
+    kpi_card("Entradas totales",f"${entradas:,.0f}",  "cuotas + tard. + don. + part. + profondo", "#06B6D4"),
+    kpi_card("Balance",         f"${balance:,.0f}",   "entradas − salidas − profondo",    "#10B981" if balance >= 0 else "#EF4444"),
 )}
 <style>
 @media(max-width:640px){{
