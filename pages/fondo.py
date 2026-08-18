@@ -1,7 +1,13 @@
 import streamlit as st
 import pandas as pd
 from datetime import date
-from utils import MOBILE_CSS, load_fondo, append_fondo, soft_delete
+try:
+    from utils import MOBILE_CSS, load_fondo, append_fondo, soft_delete
+except Exception as _e:
+    import traceback
+    st.error(f"Import error: {_e}")
+    st.code(traceback.format_exc())
+    st.stop()
 
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
 
