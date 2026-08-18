@@ -3,7 +3,7 @@ import pandas as pd
 from utils import (
     CUOTA_ESPERADA, MOBILE_CSS, CONCEPTOS_PAGO, FUENTES_PAGO,
     load_data, load_demo_data, load_participantes, load_demo_participantes,
-    load_cuota_participante, soft_delete, update_row,
+    load_cuota_participante, load_fondo, soft_delete, update_row,
 )
 
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
@@ -107,10 +107,15 @@ if demo_mode:
     miembros, pagos, gastos, donaciones = load_demo_data()
     participantes, pagos_part = load_demo_participantes()
     cuota_part = 0
+    fondo_df = None
 else:
     miembros, pagos, gastos, donaciones = load_data()
     participantes, pagos_part = load_participantes()
     cuota_part = load_cuota_participante()
+    try:
+        fondo_df = load_fondo()
+    except Exception:
+        fondo_df = None
 
 # ------------------------------------------------------------------
 # Encabezado
@@ -123,6 +128,7 @@ col_title.caption(
 )
 if not demo_mode and col_refresh.button("🔄 Refrescar", use_container_width=True):
     load_data.clear()
+    load_fondo.clear()
     st.rerun()
 
 # ------------------------------------------------------------------
@@ -159,8 +165,12 @@ recaudado_part = pagos_part["Monto"].sum() if not pagos_part.empty and "Monto" i
 esperado_part  = total_part * cuota_part
 pct_part       = int(recaudado_part / esperado_part * 100) if esperado_part > 0 else 0
 
-entradas = total_cuotas + total_tardanzas + total_donaciones + recaudado_part
-salidas  = gastos["Monto"].sum()
+fondo_entradas = fondo_df.loc[fondo_df["Tipo"] == "Entrada", "Monto"].sum() if fondo_df is not None and not fondo_df.empty else 0
+fondo_salidas  = fondo_df.loc[fondo_df["Tipo"] == "Salida",  "Monto"].sum() if fondo_df is not None and not fondo_df.empty else 0
+fondo_balance  = fondo_entradas - fondo_salidas
+
+entradas = total_cuotas + total_tardanzas + total_donaciones + recaudado_part + fondo_entradas
+salidas  = gastos["Monto"].sum() + fondo_salidas
 balance  = entradas - salidas
 
 pct_recaudado = int(total_cuotas / total_esperado * 100) if total_esperado > 0 else 0
@@ -222,9 +232,15 @@ st.markdown(f"""
     kpi_card("Pagos participantes",f"${recaudado_part:,.0f}",  f"{pct_part}% del esperado" if cuota_part > 0 else f"{total_part} participantes", "#A78BFA"),
 )}
 {kpi_section("📤 Salidas & Balance",
-    kpi_card("Salidas",        f"${salidas:,.0f}",  "total de gastos",      "#EF4444"),
-    kpi_card("Entradas totales",f"${entradas:,.0f}","cuotas + tard. + don. + part.", "#06B6D4"),
+    kpi_card("Salidas",        f"${salidas:,.0f}",  "gastos + salidas profondo",    "#EF4444"),
+    kpi_card("Entradas totales",f"${entradas:,.0f}","cuotas + tard. + don. + part. + profondo", "#06B6D4"),
     kpi_card("Balance",        f"${balance:,.0f}",  "entradas − salidas",   "#10B981" if balance >= 0 else "#EF4444"),
+)}
+{kpi_section("🏦 Profondo",
+    kpi_card("Entradas fondo",  f"${fondo_entradas:,.0f}", "ingresos al fondo",          "#10B981"),
+    kpi_card("Salidas fondo",   f"${fondo_salidas:,.0f}",  "egresos del fondo",          "#EF4444"),
+    kpi_card("Balance fondo",   f"${fondo_balance:,.0f}",  "entradas − salidas profondo","#10B981" if fondo_balance >= 0 else "#EF4444"),
+    kpi_card("Movimientos",     f"{len(fondo_df) if fondo_df is not None and not fondo_df.empty else 0}", "registros en profondo", "#6366F1"),
 )}
 <style>
 @media(max-width:640px){{
