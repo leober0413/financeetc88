@@ -351,8 +351,36 @@ def soft_delete(worksheet_name, row_num):
     ws.update_cell(row_num, idx, "FALSE")
     load_data.clear()
     load_participantes.clear()
+    load_fondo.clear()
     log_actividad("Registro eliminado", f"Hoja: {worksheet_name} — fila {row_num}")
     return True, ""
+
+
+@st.cache_data(ttl=60)
+def load_fondo():
+    ws = get_sheet().worksheet("Profondo")
+    df = _ws_to_df(ws)
+    if df.empty:
+        return df
+    if "Concepto" in df.columns:
+        df = df[df["Concepto"].astype(str).str.strip() != ""]
+    if "Activo" in df.columns:
+        df = df[df["Activo"].astype(str).str.upper() != "FALSE"]
+    if "Monto" in df.columns:
+        df["Monto"] = pd.to_numeric(df["Monto"], errors="coerce").fillna(0)
+    return df
+
+
+def append_fondo(fecha, tipo, concepto, monto, nota):
+    ws = get_sheet().worksheet("Profondo")
+    headers = ws.row_values(1)
+    mapping = {
+        "Fecha": str(fecha), "Tipo": tipo, "Concepto": concepto,
+        "Monto": monto, "Nota": nota, "Activo": "TRUE",
+    }
+    ws.append_row([mapping.get(h, "") for h in headers], value_input_option="USER_ENTERED")
+    load_fondo.clear()
+    log_actividad("Fondo registrado", f"{tipo} — {concepto} — ${monto:,.0f}")
 
 
 MOBILE_CSS = """

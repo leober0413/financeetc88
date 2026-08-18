@@ -83,7 +83,8 @@ else:
     registrar     = st.Page("pages/registrar.py",     title="Registrar",    icon="➕")
     participantes = st.Page("pages/participantes.py", title="Participantes", icon="🏕️")
     presupuesto   = st.Page("pages/presupuesto.py",   title="Presupuesto",  icon="💰")
+    fondo         = st.Page("pages/fondo.py",         title="Profondo",     icon="🏦")
     actividad     = st.Page("pages/actividad.py",     title="Actividad",    icon="📋")
-    pg = st.navigation([dashboard, registrar, participantes, presupuesto, actividad])
+    pg = st.navigation([dashboard, registrar, participantes, presupuesto, fondo, actividad])
 
 pg.run()
