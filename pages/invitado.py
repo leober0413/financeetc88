@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from utils import CUOTA_ESPERADA, MOBILE_CSS, load_data, load_demo_data, load_participantes, load_demo_participantes, load_cuota_participante
+from utils import CUOTA_ESPERADA, MOBILE_CSS, load_data, load_demo_data, load_participantes, load_demo_participantes, load_cuota_participante, load_fondo
 
 st.markdown(MOBILE_CSS, unsafe_allow_html=True)
 
@@ -11,10 +11,15 @@ if demo_mode:
     miembros, pagos, gastos, donaciones = load_demo_data()
     participantes, pagos_part = load_demo_participantes()
     cuota_part = 0
+    fondo_df = None
 else:
     miembros, pagos, gastos, donaciones = load_data()
     participantes, pagos_part = load_participantes()
     cuota_part = load_cuota_participante()
+    try:
+        fondo_df = load_fondo()
+    except Exception:
+        fondo_df = None
 
 # ------------------------------------------------------------------
 # Encabezado
@@ -46,7 +51,11 @@ esperado_part  = total_part * cuota_part
 pct_part       = int(recaudado_part / esperado_part * 100) if esperado_part > 0 else 0
 falta_part     = max(esperado_part - recaudado_part, 0)
 
-entradas = total_cuotas + total_tardanzas + total_donaciones + recaudado_part
+fondo_entradas = fondo_df.loc[fondo_df["Tipo"] == "Entrada", "Monto"].sum() if fondo_df is not None and not fondo_df.empty else 0
+fondo_salidas  = fondo_df.loc[fondo_df["Tipo"] == "Salida",  "Monto"].sum() if fondo_df is not None and not fondo_df.empty else 0
+
+entradas = total_cuotas + total_tardanzas + total_donaciones + recaudado_part + fondo_entradas
+salidas  = salidas + fondo_salidas
 balance  = entradas - salidas
 
 # ------------------------------------------------------------------
